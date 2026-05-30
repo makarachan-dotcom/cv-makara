@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CVCanvas } from "@/components/canvas/CVCanvas";
 import { CustomizationPanel } from "@/components/canvas/CustomizationPanel";
 import { SceneController } from "@/components/canvas/SceneController";
 import { StreakMatrix } from "@/components/StreakMatrix";
+import { KhmerInterviewer } from "@/components/interview/KhmerInterviewer";
 import type { TemplateMeta } from "@/templates/registry";
 import type { CVInput, SceneConfig } from "@/types/cv";
 
@@ -66,13 +67,66 @@ const DEMO_CV: CVInput = {
   ],
 };
 
+interface ActiveDraftSummary {
+  id: string;
+  fullName: string;
+  headline: string;
+}
+
 export function TemplateWorkspace({ template, unlocked, initialSceneConfig, streak }: Props) {
   const controller = useMemo(() => new SceneController(initialSceneConfig), [initialSceneConfig]);
   const [showLockedModal, setShowLockedModal] = useState(false);
   const [deploying, setDeploying] = useState(false);
   const [deployResult, setDeployResult] = useState<string | null>(null);
 
+  // ---- Unbypassable AI consultation gate -----------------------------------
+  // Entering a template workspace is "clicking a 3D template component". Until
+  // we confirm the user has a recently saved ACTIVE draft we hold them behind
+  // the AI Khmer career consultation. `draftState` distinguishes "still
+  // checking" (null) from "checked, none" (the consultation auto-opens).
+  const [draftState, setDraftState] = useState<ActiveDraftSummary | null | undefined>(undefined);
+  const [consulting, setConsulting] = useState(false);
+
+  const refreshDraft = useCallback(async () => {
+    try {
+      const res = await fetch("/api/drafts", { headers: { "cache-control": "no-store" } });
+      if (!res.ok) {
+        setDraftState(null);
+        return;
+      }
+      const json = (await res.json()) as {
+        draft: { id: string; data: { fullName: string; headline: string } } | null;
+      };
+      if (json.draft) {
+        setDraftState({
+          id: json.draft.id,
+          fullName: json.draft.data.fullName,
+          headline: json.draft.data.headline,
+        });
+      } else {
+        setDraftState(null);
+      }
+    } catch {
+      setDraftState(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshDraft();
+  }, [refreshDraft]);
+
+  // Once we know the user has no active draft, force the consultation open.
+  useEffect(() => {
+    if (draftState === null) setConsulting(true);
+  }, [draftState]);
+
   const handleDeploy = async () => {
+    // Initiating a generation with no active draft must route through the
+    // consultation first (the server also rejects with DRAFT_REQUIRED).
+    if (!draftState) {
+      setConsulting(true);
+      return;
+    }
     if (!unlocked) {
       setShowLockedModal(true);
       return;
@@ -87,8 +141,15 @@ export function TemplateWorkspace({ template, unlocked, initialSceneConfig, stre
       });
       const body = (await res.json()) as Record<string, unknown>;
       if (!res.ok) {
-        const err = (body.error as { message?: string } | undefined)?.message ?? `HTTP ${res.status}`;
-        setDeployResult(`Failed: ${err}`);
+        const errObj = body.error as { code?: string; message?: string } | undefined;
+        // The draft was archived/expired between the gate check and submit:
+        // re-open the consultation instead of surfacing a raw error.
+        if (errObj?.code === "DRAFT_REQUIRED") {
+          setDraftState(null);
+          setConsulting(true);
+          return;
+        }
+        setDeployResult(`Failed: ${errObj?.message ?? `HTTP ${res.status}`}`);
       } else {
         setDeployResult("Deployed. Check your dashboard for the live CV link.");
       }
@@ -115,19 +176,44 @@ export function TemplateWorkspace({ template, unlocked, initialSceneConfig, stre
           <h1 className="mt-1 text-2xl font-semibold">{template.name}</h1>
           <p className="mt-1 max-w-md text-sm text-ink-200">{template.description}</p>
         </header>
-        <footer className="absolute bottom-6 left-6 flex items-center gap-3">
+        <footer className="absolute bottom-6 left-6 flex flex-wrap items-center gap-3">
           <button
             onClick={handleDeploy}
-            disabled={deploying}
+            disabled={deploying || draftState === undefined}
             className={
-              "rounded-full px-5 py-2.5 text-sm font-semibold transition " +
+              "rounded-full px-5 py-2.5 text-sm font-semibold transition disabled:opacity-50 " +
               (unlocked
                 ? "bg-accent-cyan text-ink-950 hover:bg-accent-cyan/90"
                 : "border border-accent-gold/50 bg-ink-900 text-accent-gold hover:bg-ink-800")
             }
           >
-            {unlocked ? (deploying ? "Deploying…" : "Deploy to Web") : "Locked — see streak"}
+            {draftState === undefined
+              ? "កំពុងពិនិត្យ…"
+              : !draftState
+                ? "ចាប់ផ្ដើមការសម្ភាសន៍ AI"
+                : unlocked
+                  ? deploying
+                    ? "Deploying…"
+                    : "Deploy to Web"
+                  : "Locked — see streak"}
           </button>
+
+          {draftState && (
+            <button
+              type="button"
+              onClick={() => setConsulting(true)}
+              className="rounded-full border border-ink-700 bg-ink-900/80 px-4 py-2 text-xs text-ink-200 backdrop-blur transition hover:bg-ink-800"
+            >
+              ↺ ការសម្ភាសន៍ថ្មី · New consultation
+            </button>
+          )}
+
+          {draftState && (
+            <span className="rounded-full border border-accent-emerald/40 bg-ink-900/80 px-3 py-1.5 text-[11px] text-accent-emerald backdrop-blur">
+              ✓ Draft · {draftState.fullName || "បានរក្សាទុក"}
+            </span>
+          )}
+
           {deployResult && (
             <span className="text-xs text-ink-200" role="status">
               {deployResult}
@@ -139,6 +225,54 @@ export function TemplateWorkspace({ template, unlocked, initialSceneConfig, stre
       <aside className="border-l border-ink-700 bg-ink-950 p-4">
         <CustomizationPanel controller={controller} />
       </aside>
+
+      {/* Unbypassable AI Khmer career consultation. Opens automatically when no
+          active draft exists, and on demand when starting a new generation. It
+          cannot be dismissed unless the user already has a saved draft. */}
+      {consulting && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 grid place-items-center bg-ink-950/85 p-4 backdrop-blur"
+        >
+          <div className="max-h-[88vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-ink-700 bg-ink-900 p-6">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-accent-cyan">
+                  ការប្រឹក្សាអាជីព AI · Required
+                </p>
+                <h2 className="mt-1 text-lg font-semibold leading-khmer-tight text-ink-100">
+                  មុននឹងបង្កើតគំរូ {template.name}
+                </h2>
+                <p className="mt-1 text-xs leading-khmer-tight text-ink-200">
+                  AI ត្រូវសម្ភាសន៍អ្នកជាមុនសិន ដើម្បីស្រង់សមិទ្ធផល និងទិន្នន័យអាជីពស៊ីជម្រៅ។
+                </p>
+              </div>
+              {draftState && (
+                <button
+                  type="button"
+                  onClick={() => setConsulting(false)}
+                  className="rounded border border-ink-700 px-3 py-1.5 text-xs text-ink-200 hover:bg-ink-800"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <KhmerInterviewer
+              persist
+              onComplete={(draft, _industry, draftId) => {
+                setDraftState({
+                  id: draftId ?? "active",
+                  fullName: draft.fullName,
+                  headline: draft.headline,
+                });
+                setConsulting(false);
+                void refreshDraft();
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {showLockedModal && (
         <div

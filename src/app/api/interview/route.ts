@@ -10,6 +10,8 @@ import {
 } from "@/lib/interview/engine";
 import { MakaraCvDraftSchema } from "@/lib/cv-draft";
 import { enrichSummary, isLlmConfigured } from "@/lib/interview/llm";
+import { resolveSessionFromCookieStore } from "@/lib/session";
+import { saveActiveDraft } from "@/lib/drafts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,6 +27,9 @@ const RequestSchema = z.discriminatedUnion("action", [
     action: z.literal("synthesize"),
     industry: IndustryEnum,
     answers: z.record(z.string(), z.string()),
+    // When true, the synthesized draft is atomically persisted as the caller's
+    // ACTIVE draft. Requires a Telegram session; public /studio omits this.
+    persist: z.boolean().optional(),
   }),
 ]);
 
@@ -84,8 +89,27 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Optional atomic persistence (gated workspace flow). The synthesize -> save
+  // hand-off is a single DB transaction inside saveActiveDraft, so the user can
+  // never end up with a half-written or duplicate ACTIVE draft.
+  if (payload.persist) {
+    const session = await resolveSessionFromCookieStore();
+    if (!session) {
+      return fail("AUTH_REQUIRED", "Persisting a draft requires authentication.", 401);
+    }
+    const stored = await saveActiveDraft(session.userId, {
+      industry: payload.industry,
+      data: safe.data,
+      answers,
+    });
+    return NextResponse.json(
+      { draft: stored.data, draftId: stored.id, enrichedByLlm: Boolean(enriched) },
+      { headers: { "cache-control": "no-store" } },
+    );
+  }
+
   return NextResponse.json(
-    { draft: safe.data, enrichedByLlm: Boolean(enriched) },
+    { draft: safe.data, draftId: null, enrichedByLlm: Boolean(enriched) },
     { headers: { "cache-control": "no-store" } },
   );
 }

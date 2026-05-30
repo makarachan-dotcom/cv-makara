@@ -56,6 +56,39 @@ export async function exportPng(node: HTMLElement, fullName: string): Promise<vo
   triggerDownload(blob, `${slugify(fullName)}.png`);
 }
 
+/**
+ * Server-side PDF. Asks the backend to drive headless Chromium over the print
+ * route and stream back a vector, Khmer-embedded A4 PDF (requires a session).
+ * Throws with a human-readable message on auth / render failure.
+ */
+export interface ServerPdfOptions {
+  font?: string;
+  spacing?: number;
+  accent?: string;
+  draftId?: string;
+}
+
+export async function exportServerPdf(opts: ServerPdfOptions, fullName: string): Promise<void> {
+  const res = await fetch("/api/export/pdf", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(opts),
+  });
+  if (!res.ok) {
+    let message = `HTTP ${res.status}`;
+    try {
+      const body = (await res.json()) as { error?: { message?: string } };
+      if (body.error?.message) message = body.error.message;
+    } catch {
+      /* non-JSON error body */
+    }
+    if (res.status === 401) message = "សូមចូលគណនី Telegram មុននឹងនាំចេញ PDF ពីម៉ាស៊ីនមេ។";
+    throw new Error(message);
+  }
+  const blob = await res.blob();
+  triggerDownload(blob, `${slugify(fullName)}.pdf`);
+}
+
 export function exportAtsText(cv: MakaraCvDraft): void {
   triggerDownload(
     new Blob([toAtsText(cv)], { type: "text/plain;charset=utf-8" }),

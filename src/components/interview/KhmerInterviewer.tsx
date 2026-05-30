@@ -22,10 +22,16 @@ import {
 type Step = "industry" | "qa" | "synthesizing" | "error";
 
 interface KhmerInterviewerProps {
-  onComplete: (draft: MakaraCvDraft, industry: IndustryId) => void;
+  onComplete: (draft: MakaraCvDraft, industry: IndustryId, draftId: string | null) => void;
+  /**
+   * When true the synthesized draft is atomically persisted server-side as the
+   * caller's ACTIVE draft (requires a Telegram session). Used by the gated
+   * template workspace; the public /studio leaves it false.
+   */
+  persist?: boolean;
 }
 
-export function KhmerInterviewer({ onComplete }: KhmerInterviewerProps) {
+export function KhmerInterviewer({ onComplete, persist = false }: KhmerInterviewerProps) {
   const [step, setStep] = useState<Step>("industry");
   const [industry, setIndustry] = useState<IndustryId | null>(null);
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
@@ -65,11 +71,11 @@ export function KhmerInterviewer({ onComplete }: KhmerInterviewerProps) {
       const res = await fetch("/api/interview", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "synthesize", industry, answers: nextAnswers }),
+        body: JSON.stringify({ action: "synthesize", industry, answers: nextAnswers, persist }),
       });
       if (!res.ok) throw new Error(`Synthesis failed (${res.status}).`);
-      const json = (await res.json()) as { draft: MakaraCvDraft };
-      onComplete(json.draft, industry);
+      const json = (await res.json()) as { draft: MakaraCvDraft; draftId: string | null };
+      onComplete(json.draft, industry, json.draftId ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Synthesis failed.");
       setStep("error");

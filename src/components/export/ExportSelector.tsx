@@ -8,6 +8,7 @@ import {
   exportAtsText,
   exportPdf,
   exportPng,
+  exportServerPdf,
 } from "@/lib/export/client";
 
 // =============================================================================
@@ -19,6 +20,11 @@ interface ExportSelectorProps {
   draft: MakaraCvDraft;
   /** Ref to the live A4 CvDocument node (used for PNG rasterization). */
   nodeRef: RefObject<HTMLElement>;
+  /**
+   * When provided, enables the server-side (headless Chromium) PDF export with
+   * the current live styling. Requires a Telegram session + a saved draft.
+   */
+  serverPdf?: { font: string; spacing: number; accent: string; draftId?: string };
 }
 
 const FORMATS = [
@@ -48,7 +54,7 @@ const FORMATS = [
   },
 ];
 
-export function ExportSelector({ draft, nodeRef }: ExportSelectorProps) {
+export function ExportSelector({ draft, nodeRef, serverPdf }: ExportSelectorProps) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,6 +70,27 @@ export function ExportSelector({ draft, nodeRef }: ExportSelectorProps) {
       else if (key === "ats-json") exportAtsJson(draft);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Export failed.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function runServerPdf() {
+    if (!serverPdf) return;
+    setError(null);
+    setBusy("server-pdf");
+    try {
+      await exportServerPdf(
+        {
+          font: serverPdf.font,
+          spacing: serverPdf.spacing,
+          accent: serverPdf.accent,
+          draftId: serverPdf.draftId,
+        },
+        draft.fullName,
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Server PDF failed.");
     } finally {
       setBusy(null);
     }
@@ -95,6 +122,26 @@ export function ExportSelector({ draft, nodeRef }: ExportSelectorProps) {
           </button>
         ))}
       </div>
+      {serverPdf && (
+        <button
+          type="button"
+          disabled={busy !== null}
+          onClick={runServerPdf}
+          className="flex w-full items-center justify-between rounded-lg border border-accent-emerald/40 bg-accent-emerald/5 p-3 text-left transition hover:bg-accent-emerald/10 disabled:opacity-50"
+        >
+          <span>
+            <span className="block text-sm font-semibold text-ink-100">PDF · ម៉ាស៊ីនមេ</span>
+            <span className="mt-0.5 block text-[10.5px] leading-khmer-tight text-ink-200">
+              {busy === "server-pdf"
+                ? "កំពុងបង្ហាញពីម៉ាស៊ីនមេ…"
+                : "Headless Chromium · vector · ពុម្ពអក្សរបង្កប់ស្វ័យប្រវត្តិ"}
+            </span>
+          </span>
+          <span className="rounded-full bg-accent-emerald/15 px-2 py-0.5 text-[9px] uppercase tracking-wider text-accent-emerald">
+            Auto
+          </span>
+        </button>
+      )}
       {error && <p className="text-xs text-accent-rose">{error}</p>}
       <p className="text-[10px] leading-khmer-tight text-ink-500">
         PDF ប្រើ dialog បោះពុម្ព → ជ្រើស “Save as PDF” ដើម្បីបង្កប់ពុម្ពអក្សរខ្មែរ។
