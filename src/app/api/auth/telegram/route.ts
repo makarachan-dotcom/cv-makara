@@ -6,6 +6,7 @@ import {
   TelegramAuthError,
 } from "@/lib/telegram";
 import { createSession, setSessionCookie } from "@/lib/session";
+import { roleForTelegramId } from "@/lib/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -68,6 +69,11 @@ export async function POST(req: NextRequest) {
     return securityException("AUTH_INTERNAL", "Internal Telegram verification error.", 500);
   }
 
+  // Admin clearance engine — runs INSIDE the verified-login handshake. A match
+  // against ADMIN_TELEGRAM_IDS instantly flags the persisted role as ADMIN,
+  // which downstream gates treat as an absolute global override.
+  const role = roleForTelegramId(verified.telegramId);
+
   const user = await prisma.user.upsert({
     where: { telegramId: verified.telegramId },
     create: {
@@ -77,6 +83,7 @@ export async function POST(req: NextRequest) {
       lastName: verified.lastName,
       photoUrl: verified.photoUrl,
       authDate: verified.authDate,
+      role,
     },
     update: {
       username: verified.username,
@@ -85,8 +92,9 @@ export async function POST(req: NextRequest) {
       photoUrl: verified.photoUrl,
       authDate: verified.authDate,
       lastLoginAt: new Date(),
+      role,
     },
-    select: { id: true },
+    select: { id: true, role: true },
   });
 
   const session = await createSession({
@@ -97,7 +105,7 @@ export async function POST(req: NextRequest) {
   setSessionCookie(session.id, session.expiresAt);
 
   return NextResponse.json(
-    { ok: true, userId: user.id.toString() },
+    { ok: true, userId: user.id.toString(), role: user.role },
     { headers: { "cache-control": "no-store" } },
   );
 }

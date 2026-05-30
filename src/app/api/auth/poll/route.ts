@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { isValidLoginToken } from "@/lib/login-token";
 import { createSession, setSessionCookie } from "@/lib/session";
+import { roleForTelegramId } from "@/lib/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -70,6 +71,9 @@ export async function GET(req: NextRequest) {
   }
 
   // Upsert the User row from the snapshot saved by the webhook handler.
+  // Admin clearance is applied here too so the bot deep-link flow grants the
+  // exact same ADMIN role as the Login Widget flow.
+  const role = roleForTelegramId(row.telegramId);
   const user = await prisma.user.upsert({
     where: { telegramId: row.telegramId },
     create: {
@@ -79,6 +83,7 @@ export async function GET(req: NextRequest) {
       lastName: row.lastName,
       photoUrl: row.photoUrl,
       authDate: row.authedAt ?? new Date(),
+      role,
     },
     update: {
       username: row.username,
@@ -87,8 +92,9 @@ export async function GET(req: NextRequest) {
       photoUrl: row.photoUrl,
       authDate: row.authedAt ?? new Date(),
       lastLoginAt: new Date(),
+      role,
     },
-    select: { id: true },
+    select: { id: true, role: true },
   });
 
   const session = await createSession({
@@ -99,7 +105,7 @@ export async function GET(req: NextRequest) {
   setSessionCookie(session.id, session.expiresAt);
 
   return NextResponse.json(
-    { status: "ok", userId: user.id.toString() },
+    { status: "ok", userId: user.id.toString(), role: user.role },
     { headers: { "cache-control": "no-store" } },
   );
 }

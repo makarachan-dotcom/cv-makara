@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const session = await resolveSessionFromCookieStore();
+  const admin = session?.isAdmin ?? false;
   const unlocks = session
     ? await prisma.templateUnlock.findMany({
         where: { userId: session.userId },
@@ -17,9 +18,11 @@ export async function GET() {
   const unlocked = new Set(unlocks.map((u) => u.templateId));
   return NextResponse.json(
     {
+      admin,
       templates: TEMPLATES.map((t) => ({
         ...t,
-        unlocked: t.access === "free" || unlocked.has(t.id),
+        // Admins instantly unlock every premium template.
+        unlocked: admin || t.access === "free" || unlocked.has(t.id),
       })),
     },
     { headers: { "cache-control": "no-store" } },

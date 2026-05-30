@@ -2,6 +2,7 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { prisma } from "./db";
 import { SESSION_COOKIE_NAME } from "./session-cookie-name";
+import { isAdminSession, type UserRole } from "./admin";
 
 export { SESSION_COOKIE_NAME };
 export const SESSION_LIFETIME_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
@@ -63,16 +64,42 @@ export interface ResolvedSession {
   sessionId: string;
   userId: bigint;
   expiresAt: Date;
+  /** Persisted authorization role for the session owner. */
+  role: UserRole;
+  /** Owner's Telegram ID (used for live admin-allowlist re-checks). */
+  telegramId: bigint;
+  /**
+   * True when the session owner has master-admin clearance (role ADMIN or a
+   * Telegram ID currently in ADMIN_TELEGRAM_IDS). Gated routes consult this to
+   * apply the absolute global overrides (skip streak / cooldown / locks).
+   */
+  isAdmin: boolean;
 }
 
 export async function resolveSessionFromCookieStore(): Promise<ResolvedSession | null> {
   const raw = cookies().get(SESSION_COOKIE_NAME)?.value;
   const sessionId = decodeSessionCookie(raw);
   if (!sessionId) return null;
-  const row = await prisma.session.findUnique({ where: { id: sessionId } });
+  const row = await prisma.session.findUnique({
+    where: { id: sessionId },
+    select: {
+      id: true,
+      userId: true,
+      expiresAt: true,
+      user: { select: { role: true, telegramId: true } },
+    },
+  });
   if (!row) return null;
   if (row.expiresAt.getTime() <= Date.now()) return null;
-  return { sessionId: row.id, userId: row.userId, expiresAt: row.expiresAt };
+  const role = (row.user?.role === "ADMIN" ? "ADMIN" : "USER") as UserRole;
+  return {
+    sessionId: row.id,
+    userId: row.userId,
+    expiresAt: row.expiresAt,
+    role,
+    telegramId: row.user?.telegramId ?? BigInt(0),
+    isAdmin: isAdminSession({ role, telegramId: row.user?.telegramId }),
+  };
 }
 
 export async function destroySession(sessionId: string): Promise<void> {

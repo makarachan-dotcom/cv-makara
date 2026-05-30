@@ -52,9 +52,14 @@ export async function POST(req: NextRequest) {
     return error("TEMPLATE_UNKNOWN", `Template ${templateId} is not registered.`, 400);
   }
 
+  // Absolute global admin override: master admins bypass every gate — locked
+  // templates, the AI-consultation requirement, and the rolling cooldown.
+  const admin = session.isAdmin;
+
   // Locked templates may be previewed but not deployed. The frontend should
   // never reach here, but we re-check at the API layer to make tampering moot.
-  if (isLocked(templateId)) {
+  // Admins skip this entirely (all 18 premium templates are unlocked for them).
+  if (!admin && isLocked(templateId)) {
     const unlock = await prisma.templateUnlock.findUnique({
       where: { userId_templateId: { userId: session.userId, templateId } },
     });
@@ -82,9 +87,10 @@ export async function POST(req: NextRequest) {
 
       // Unbypassable consultation gate: a generation cannot exist without a
       // prior AI Khmer consultation. The frontend intercepts first, but we
-      // re-check here so tampering with the client is moot.
+      // re-check here so tampering with the client is moot. Admins are exempt:
+      // they may generate directly without a saved draft.
       const draftId = await findActiveDraftId(tx, session.userId);
-      if (draftId === null) {
+      if (!admin && draftId === null) {
         return error(
           "DRAFT_REQUIRED",
           "Complete the AI Khmer career consultation before generating.",
@@ -93,7 +99,7 @@ export async function POST(req: NextRequest) {
       }
 
       const decision = await evaluateCooldown(tx, session.userId);
-      if (!decision.allowed) {
+      if (!admin && !decision.allowed) {
         return error(
           "COOLDOWN_ACTIVE",
           `Generation cap reached: ${GENERATIONS_PER_WINDOW} per ${ROLLING_WINDOW_HOURS}h.`,
@@ -128,12 +134,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           ok: true,
+          role: admin ? "ADMIN" : "USER",
           cv: { id: cv.id.toString(), createdAt: cv.createdAt.toISOString() },
           generation: {
             id: generation.id.toString(),
             generatedAt: generation.generatedAt.toISOString(),
           },
-          remainingInWindow: GENERATIONS_PER_WINDOW - (decision.used + 1),
+          remainingInWindow: admin
+            ? null
+            : Math.max(0, GENERATIONS_PER_WINDOW - (decision.used + 1)),
+          unlimited: admin,
         },
         { headers: { "cache-control": "no-store" } },
       );
@@ -153,13 +163,15 @@ export async function GET() {
     const decision = await evaluateCooldown(tx, session.userId);
     return NextResponse.json(
       {
-        allowed: decision.allowed,
+        allowed: session.isAdmin ? true : decision.allowed,
+        admin: session.isAdmin,
+        unlimited: session.isAdmin,
         used: decision.used,
-        cap: decision.cap,
+        cap: session.isAdmin ? null : decision.cap,
         windowHours: ROLLING_WINDOW_HOURS,
-        nextSlotUnlocksAtMs: decision.nextSlotUnlocksAtMs,
+        nextSlotUnlocksAtMs: session.isAdmin ? null : decision.nextSlotUnlocksAtMs,
         nextSlotUnlocksAtIso:
-          decision.nextSlotUnlocksAtMs !== null
+          !session.isAdmin && decision.nextSlotUnlocksAtMs !== null
             ? new Date(decision.nextSlotUnlocksAtMs).toISOString()
             : null,
       },

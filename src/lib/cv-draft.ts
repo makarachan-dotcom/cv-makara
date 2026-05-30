@@ -1,4 +1,12 @@
 import { z } from "zod";
+import {
+  CertificateRefSchema,
+  CvMetaSchema,
+  DemographicsSchema,
+  EducationJourneySchema,
+  EMPTY_DEMOGRAPHICS,
+  InterviewPrepItemSchema,
+} from "@/types/cv";
 
 // =============================================================================
 // MakaraCvDraft
@@ -34,6 +42,11 @@ export type ProjectDraft = z.infer<typeof ProjectDraftSchema>;
 export const MakaraCvDraftSchema = z.object({
   fullName: z.string().trim().min(1).max(120),
   headline: z.string().trim().max(200).default(""),
+  /**
+   * Candidate profile picture (data URL or remote URL). Per the privacy spec
+   * this stays 100% visible/unmasked on the rendered CV for recruiters.
+   */
+  photoUrl: z.string().trim().max(2_000_000).default(""),
   contact: z
     .object({
       telegram: z.string().trim().max(120).default(""),
@@ -42,12 +55,25 @@ export const MakaraCvDraftSchema = z.object({
       location: z.string().trim().max(160).default(""),
     })
     .default({ telegram: "", email: "", phone: "", location: "" }),
+  /** Extended demographics (DOB, place of birth, address, relationship). */
+  demographics: DemographicsSchema.default(EMPTY_DEMOGRAPHICS),
   summary: z.string().trim().max(2000).default(""),
   experience: z.array(ExperienceDraftSchema).max(20).default([]),
   education: z.array(EducationDraftSchema).max(10).default([]),
+  /** Strict middle/high-school branching captured by the interviewer. */
+  educationJourney: EducationJourneySchema.default({}),
   skills: z.array(z.string().trim().min(1).max(80)).max(60).default([]),
   projects: z.array(ProjectDraftSchema).max(20).default([]),
   languages: z.array(z.string().trim().min(1).max(80)).max(12).default([]),
+  /**
+   * Pointers to uploaded, DRM-shielded official credentials. The CV renders
+   * these as a "Scan to Verify" QR — never the document image itself.
+   */
+  certificates: z.array(CertificateRefSchema).max(10).default([]),
+  /** AI HR Advisor output: tailored recruiter questions + model answers. */
+  interviewPrep: z.array(InterviewPrepItemSchema).max(20).default([]),
+  /** Auto-generated footer metadata (created date + IP-derived location). */
+  meta: CvMetaSchema.default({ createdAtIso: "", createdLocation: "" }),
 });
 export type MakaraCvDraft = z.infer<typeof MakaraCvDraftSchema>;
 
@@ -98,11 +124,17 @@ export function fontClassFor(key: KhmerFontKey): string {
 export const EMPTY_DRAFT: MakaraCvDraft = {
   fullName: "",
   headline: "",
+  photoUrl: "",
   contact: { telegram: "", email: "", phone: "", location: "" },
+  demographics: { ...EMPTY_DEMOGRAPHICS },
   summary: "",
   experience: [],
   education: [],
+  educationJourney: {},
   skills: [],
   projects: [],
   languages: [],
+  certificates: [],
+  interviewPrep: [],
+  meta: { createdAtIso: "", createdLocation: "" },
 };

@@ -169,3 +169,185 @@ export function hexToRgb(hex: string): [number, number, number] {
   const b = parseInt(v.slice(4, 6), 16) / 255;
   return [r, g, b];
 }
+
+
+// =============================================================================
+// EXTENDED DEMOGRAPHICS + RIGID EDUCATIONAL BRANCHING MATRIX
+// -----------------------------------------------------------------------------
+// These schemas back the Khmer Interviewer's one-question-at-a-time stepper and
+// are shared by the looser `MakaraCvDraft` model (src/lib/cv-draft.ts). They are
+// deliberately strict conditional trees: each educational fork is an
+// independent discriminated union so impossible states are unrepresentable.
+// =============================================================================
+
+/**
+ * Relationship status. Options are pinned to the exact Facebook profile fields
+ * per spec so the demographics block feels familiar to Khmer users.
+ */
+export const RelationshipStatusEnum = z.enum([
+  "single",
+  "in_relationship",
+  "married",
+  "engaged",
+  "complicated",
+]);
+export type RelationshipStatus = z.infer<typeof RelationshipStatusEnum>;
+
+export interface RelationshipStatusOption {
+  value: RelationshipStatus;
+  /** Khmer label. */
+  labelKm: string;
+  /** English label (matches Facebook exactly). */
+  labelEn: string;
+}
+
+export const RELATIONSHIP_STATUS_OPTIONS: ReadonlyArray<RelationshipStatusOption> = [
+  { value: "single", labelKm: "នៅលីវ", labelEn: "Single" },
+  { value: "in_relationship", labelKm: "កំពុងមានទំនាក់ទំនង", labelEn: "In a relationship" },
+  { value: "married", labelKm: "រៀបការ", labelEn: "Married" },
+  { value: "engaged", labelKm: "ភ្ជាប់ពាក្យ", labelEn: "Engaged" },
+  { value: "complicated", labelKm: "ស្មុគស្មាញ", labelEn: "It's complicated" },
+];
+
+export function relationshipLabelKm(value: RelationshipStatus | undefined): string {
+  if (!value) return "";
+  return RELATIONSHIP_STATUS_OPTIONS.find((o) => o.value === value)?.labelKm ?? "";
+}
+
+/**
+ * Extended personal demographics. Per the privacy spec these fields stay 100%
+ * visible/unmasked on the rendered CV (only uploaded official credentials are
+ * shielded behind the verification QR — see CertificateRefSchema below).
+ */
+export const DemographicsSchema = z.object({
+  dateOfBirth: z.string().trim().max(40).default(""),
+  placeOfBirth: z.string().trim().max(160).default(""),
+  currentAddress: z.string().trim().max(240).default(""),
+  relationshipStatus: RelationshipStatusEnum.optional(),
+});
+export type Demographics = z.infer<typeof DemographicsSchema>;
+
+export const EMPTY_DEMOGRAPHICS: Demographics = {
+  dateOfBirth: "",
+  placeOfBirth: "",
+  currentAddress: "",
+  relationshipStatus: undefined,
+};
+
+// -----------------------------------------------------------------------------
+// Certificate reference (NEVER the raw file). The actual uploaded credential is
+// stored server-side in the `certificates` table and surfaced ONLY through the
+// DRM verification sub-page. The CV/draft carries this opaque pointer; the 2D
+// document renders it as a "Scan to Verify" QR — never the document image.
+// -----------------------------------------------------------------------------
+export const CertificateRefSchema = z.object({
+  /** Server certificate row id (stringified BigInt). */
+  id: z.string().min(1).max(32),
+  /** Opaque, unguessable token embedded in the verification QR URL. */
+  verifyToken: z.string().regex(/^[A-Za-z0-9_-]{16,64}$/, "Invalid certificate verify token"),
+  /** Human label, e.g. "សញ្ញាប័ត្រ BacII". */
+  label: z.string().trim().min(1).max(160),
+  /** Issuing authority. Defaults to the Cambodian Ministry of Education. */
+  issuer: z.string().trim().max(200).default("ក្រសួងអប់រំ យុវជន និងកីឡា"),
+  /** Kind discriminator so multiple credential types can coexist. */
+  kind: z.enum(["bac2", "diploma", "certificate", "other"]).default("certificate"),
+});
+export type CertificateRef = z.infer<typeof CertificateRefSchema>;
+
+// -----------------------------------------------------------------------------
+// MIDDLE SCHOOL (អនុវិទ្យាល័យ) — three explicit, mutually-exclusive paths.
+//   • graduated     (រៀនចប់)      → capture school + graduation year
+//   • dropped       (ឈប់រៀន)      → capture the grade + year stopped + reason
+//   • never_studied (អត់បានរៀន)   → capture reason only
+// -----------------------------------------------------------------------------
+export const MiddleSchoolStatusEnum = z.enum(["graduated", "dropped", "never_studied"]);
+export type MiddleSchoolStatus = z.infer<typeof MiddleSchoolStatusEnum>;
+
+export const MiddleSchoolSchema = z.discriminatedUnion("status", [
+  z.object({
+    status: z.literal("graduated"),
+    school: z.string().trim().max(200).default(""),
+    graduationYear: z.string().trim().max(12).default(""),
+  }),
+  z.object({
+    status: z.literal("dropped"),
+    /** ទី៧ / ទី៨ / ទី៩ — the grade at which they stopped. */
+    stoppedAtGrade: z.string().trim().max(24).default(""),
+    stoppedYear: z.string().trim().max(12).default(""),
+    reason: z.string().trim().max(400).default(""),
+  }),
+  z.object({
+    status: z.literal("never_studied"),
+    reason: z.string().trim().max(400).default(""),
+  }),
+]);
+export type MiddleSchool = z.infer<typeof MiddleSchoolSchema>;
+
+// -----------------------------------------------------------------------------
+// HIGH SCHOOL (វិទ្យាល័យ) — branch on the BacII outcome.
+//   • passed_bac2 (ជាប់បាក់ឌុប)   → reveal a secure cert upload (CertificateRef)
+//   • failed_bac2 (ធ្លាក់បាក់ឌុប)  → capture alternative training / practical skills
+//   • dropped     (ឈប់រៀន)        → capture the exact grade stopped at (ទី១០/ទី១១/ទី១២)
+// -----------------------------------------------------------------------------
+export const HighSchoolOutcomeEnum = z.enum(["passed_bac2", "failed_bac2", "dropped"]);
+export type HighSchoolOutcome = z.infer<typeof HighSchoolOutcomeEnum>;
+
+export const HighSchoolSchema = z.discriminatedUnion("outcome", [
+  z.object({
+    outcome: z.literal("passed_bac2"),
+    school: z.string().trim().max(200).default(""),
+    examYear: z.string().trim().max(12).default(""),
+    /** BacII letter grade A–E (optional). */
+    grade: z.string().trim().max(4).default(""),
+    /** Pointer to the uploaded, DRM-shielded BacII certificate. */
+    certificate: CertificateRefSchema.optional(),
+  }),
+  z.object({
+    outcome: z.literal("failed_bac2"),
+    school: z.string().trim().max(200).default(""),
+    examYear: z.string().trim().max(12).default(""),
+    /** Targeted track: vocational / alternative training program. */
+    alternativeTraining: z.string().trim().max(400).default(""),
+    /** Practical, hands-on skills surfaced instead of an academic credential. */
+    practicalSkills: z.array(z.string().trim().min(1).max(80)).max(20).default([]),
+    /** Optional supporting certificates (vocational, short-course, etc.). */
+    certificates: z.array(CertificateRefSchema).max(10).default([]),
+  }),
+  z.object({
+    outcome: z.literal("dropped"),
+    /** ទី១០ / ទី១១ / ទី១២ — the grade at which they stopped. */
+    stoppedAtGrade: z.string().trim().max(24).default(""),
+    stoppedYear: z.string().trim().max(12).default(""),
+    reason: z.string().trim().max(400).default(""),
+  }),
+]);
+export type HighSchool = z.infer<typeof HighSchoolSchema>;
+
+/**
+ * The full educational journey. Both forks are optional so the interviewer can
+ * progressively build it, but each present fork is internally fully-consistent.
+ */
+export const EducationJourneySchema = z.object({
+  middleSchool: MiddleSchoolSchema.optional(),
+  highSchool: HighSchoolSchema.optional(),
+});
+export type EducationJourney = z.infer<typeof EducationJourneySchema>;
+
+// -----------------------------------------------------------------------------
+// AI HR Interview Prep item — a single recruiter question + model answer pair.
+// -----------------------------------------------------------------------------
+export const InterviewPrepItemSchema = z.object({
+  question: z.string().trim().min(1).max(400),
+  answer: z.string().trim().min(1).max(1200),
+});
+export type InterviewPrepItem = z.infer<typeof InterviewPrepItemSchema>;
+
+// -----------------------------------------------------------------------------
+// Post-generation footer metadata. Both values are AUTO-GENERATED at synthesis
+// time; the user can neither pick nor edit the location (server IP geolocation).
+// -----------------------------------------------------------------------------
+export const CvMetaSchema = z.object({
+  createdAtIso: z.string().trim().max(40).default(""),
+  createdLocation: z.string().trim().max(160).default(""),
+});
+export type CvMeta = z.infer<typeof CvMetaSchema>;
