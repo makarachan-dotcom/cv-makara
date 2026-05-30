@@ -1,0 +1,136 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+  binaryTargets   = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  extensions = [pgcrypto]
+}
+
+model User {
+  id                BigInt   @id @default(autoincrement())
+  telegramId        BigInt   @unique @map("telegram_id")
+  username          String?  @db.VarChar(64)
+  firstName         String?  @map("first_name") @db.VarChar(128)
+  lastName          String?  @map("last_name") @db.VarChar(128)
+  photoUrl          String?  @map("photo_url") @db.VarChar(512)
+  authDate          DateTime @map("auth_date") @db.Timestamptz(6)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastLoginAt       DateTime @default(now()) @map("last_login_at") @db.Timestamptz(6)
+
+  cvs               CV[]
+  generations       Generation[]
+  streak            Streak?
+  checkIns          CheckIn[]
+  templateUnlocks   TemplateUnlock[]
+  sessions          Session[]
+
+  @@index([username])
+  @@map("users")
+}
+
+model Session {
+  id          String   @id @db.Uuid
+  userId      BigInt   @map("user_id")
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  userAgent   String?  @map("user_agent") @db.VarChar(512)
+  ipAddress   String?  @map("ip_address") @db.Inet
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model CV {
+  id          BigInt   @id @default(autoincrement())
+  userId      BigInt   @map("user_id")
+  templateId  String   @map("template_id") @db.VarChar(64)
+  payload     Json
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generation  Generation?
+
+  @@index([userId, createdAt])
+  @@map("cvs")
+}
+
+model Generation {
+  id          BigInt   @id @default(autoincrement())
+  userId      BigInt   @map("user_id")
+  cvId        BigInt?  @unique @map("cv_id")
+  templateId  String   @map("template_id") @db.VarChar(64)
+  generatedAt DateTime @default(now()) @map("generated_at") @db.Timestamptz(6)
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cv          CV?      @relation(fields: [cvId], references: [id], onDelete: SetNull)
+
+  @@index([userId, generatedAt])
+  @@map("generations")
+}
+
+model Streak {
+  userId           BigInt   @id @map("user_id")
+  currentCount     Int      @default(0) @map("current_count")
+  lastCheckInDate  DateTime? @map("last_check_in_date") @db.Date
+  longestCount     Int      @default(0) @map("longest_count")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("streaks")
+}
+
+model CheckIn {
+  id           BigInt   @id @default(autoincrement())
+  userId       BigInt   @map("user_id")
+  checkInDate  DateTime @map("check_in_date") @db.Date
+  countAfter   Int      @map("count_after")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, checkInDate])
+  @@index([userId, checkInDate])
+  @@map("check_ins")
+}
+
+model TemplateUnlock {
+  userId       BigInt   @map("user_id")
+  templateId   String   @map("template_id") @db.VarChar(64)
+  unlockedAt   DateTime @default(now()) @map("unlocked_at") @db.Timestamptz(6)
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, templateId])
+  @@map("template_unlocks")
+}
+
+// Pending login tokens for the bot deep-link auth flow.
+// Lifecycle: PENDING -> AUTHENTICATED (by webhook) -> CONSUMED (by /api/auth/poll).
+// Rows expire after LOGIN_TOKEN_TTL_MS and are GC'd opportunistically.
+model LoginToken {
+  token        String   @id @db.VarChar(64)
+  status       String   @default("PENDING") @db.VarChar(16)
+  telegramId   BigInt?  @map("telegram_id")
+  username     String?  @db.VarChar(64)
+  firstName    String?  @map("first_name") @db.VarChar(128)
+  lastName     String?  @map("last_name") @db.VarChar(128)
+  photoUrl     String?  @map("photo_url") @db.VarChar(512)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  authedAt     DateTime? @map("authed_at") @db.Timestamptz(6)
+  consumedAt   DateTime? @map("consumed_at") @db.Timestamptz(6)
+  expiresAt    DateTime @map("expires_at") @db.Timestamptz(6)
+
+  @@index([expiresAt])
+  @@index([status, telegramId])
+  @@map("login_tokens")
+}

@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid theme("colors.accent.cyan");
+  outline-offset: 2px;
+}
+
+/* =========================================================================
+   KHMER ANTI-CLIPPING TYPOGRAPHY
+   -------------------------------------------------------------------------
+   Khmer is a complex stacking script: subscript consonants (ជើងអក្សរ) hang
+   BELOW the baseline and dependent vowels (ស្រៈលើ / ស្រៈក្រោម) sit ABOVE and
+   below the base glyph. Browsers clip these when line-height is tight or an
+   ancestor sets `overflow: hidden` with a fixed height. The rules below are
+   the defensive floor applied everywhere Khmer text is rendered — on screen
+   AND in the print-to-PDF pipeline — so nothing ever gets cut.
+   ========================================================================= */
+:lang(km),
+.khmer {
+  /* Generous leading so the upper vowel + lower subscript both have room. */
+  line-height: 2.05;
+  /* Breathing room so the tallest vowel / deepest ជើង never touches the box. */
+  padding-block: 0.12em;
+  /* Khmer has no inter-word spaces — break by syllable cluster, never mid-glyph. */
+  word-break: normal;
+  overflow-wrap: anywhere;
+  line-break: normal;
+  /* Defeat any inherited clipping container. */
+  overflow: visible;
+  text-rendering: optimizeLegibility;
+  -webkit-font-feature-settings: "liga", "clig", "kern";
+  font-feature-settings: "liga", "clig", "kern";
+}
+
+/* Document-grade Khmer (inside the A4 CV). Slightly tighter for density while
+   still clearing subscripts; the extra top padding protects ស្រៈ from the
+   page margin edge. */
+.khmer-doc {
+  line-height: 1.7;
+  padding-top: 0.18em;
+  padding-bottom: 0.1em;
+  overflow: visible;
+}
+
+/* Headings carry the most diacritics relative to their size — give them more. */
+.khmer-heading {
+  line-height: 1.55;
+  padding-top: 0.16em;
+  overflow: visible;
+}
+
+/* =========================================================================
+   A4 PRINT / PDF PIPELINE
+   -------------------------------------------------------------------------
+   The 2D CV documents export to a true A4 page. `window.print()` → "Save as
+   PDF" produces vector text with the self-hosted Khmer woff2 fonts embedded,
+   preserving exact shaping. Only #cv-print-root is printed.
+   ========================================================================= */
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #cv-print-root,
+  #cv-print-root * {
+    visibility: visible;
+  }
+  #cv-print-root {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    box-shadow: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
