@@ -28,6 +28,7 @@ model User {
   checkIns          CheckIn[]
   templateUnlocks   TemplateUnlock[]
   sessions          Session[]
+  cvDrafts          CvDraft[]
 
   @@index([username])
   @@map("users")
@@ -67,14 +68,43 @@ model Generation {
   id          BigInt   @id @default(autoincrement())
   userId      BigInt   @map("user_id")
   cvId        BigInt?  @unique @map("cv_id")
+  draftId     BigInt?  @map("draft_id")
   templateId  String   @map("template_id") @db.VarChar(64)
   generatedAt DateTime @default(now()) @map("generated_at") @db.Timestamptz(6)
 
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   cv          CV?      @relation(fields: [cvId], references: [id], onDelete: SetNull)
+  draft       CvDraft? @relation(fields: [draftId], references: [id], onDelete: SetNull)
 
   @@index([userId, generatedAt])
+  @@index([draftId])
   @@map("generations")
+}
+
+// =============================================================================
+// CvDraft
+// The Khmer-first content draft produced by the AI Khmer Interviewer. At most
+// ONE row per user may be in the ACTIVE state (enforced by a partial unique
+// index in the raw migration); saving a new draft archives the previous active
+// one inside a single transaction so the interview -> saved-draft transition is
+// atomic. `data` holds the validated MakaraCvDraft; `answers` keeps the raw
+// Khmer interview answers for re-editing / audit.
+// =============================================================================
+model CvDraft {
+  id          BigInt   @id @default(autoincrement())
+  userId      BigInt   @map("user_id")
+  industry    String   @db.VarChar(32)
+  status      String   @default("ACTIVE") @db.VarChar(16)
+  data        Json
+  answers     Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generations Generation[]
+
+  @@index([userId, status, updatedAt])
+  @@map("cv_drafts")
 }
 
 model Streak {

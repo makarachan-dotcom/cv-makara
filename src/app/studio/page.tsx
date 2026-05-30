@@ -107,7 +107,11 @@ export default function StudioPage() {
                 </label>
               </section>
 
-              <ExportSelector draft={draft} nodeRef={cvRef} />
+              <ExportSelector
+                draft={draft}
+                nodeRef={cvRef}
+                serverPdf={{ font, spacing: lineSpacing, accent }}
+              />
 
               <button
                 type="button"

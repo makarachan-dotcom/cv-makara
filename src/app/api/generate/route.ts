@@ -5,6 +5,7 @@ import { resolveSessionFromCookieStore } from "@/lib/session";
 import { CVInputSchema } from "@/types/cv";
 import { evaluateCooldown, GENERATIONS_PER_WINDOW, ROLLING_WINDOW_HOURS } from "@/lib/cooldown";
 import { acquireLock } from "@/lib/lock";
+import { findActiveDraftId } from "@/lib/drafts";
 import { getTemplate, isLocked } from "@/templates/registry";
 
 export const runtime = "nodejs";
@@ -79,6 +80,18 @@ export async function POST(req: NextRequest) {
       // when Redis is down. The combination is intentionally redundant.
       await tx.$executeRaw`SELECT id FROM users WHERE id = ${session.userId} FOR UPDATE`;
 
+      // Unbypassable consultation gate: a generation cannot exist without a
+      // prior AI Khmer consultation. The frontend intercepts first, but we
+      // re-check here so tampering with the client is moot.
+      const draftId = await findActiveDraftId(tx, session.userId);
+      if (draftId === null) {
+        return error(
+          "DRAFT_REQUIRED",
+          "Complete the AI Khmer career consultation before generating.",
+          409,
+        );
+      }
+
       const decision = await evaluateCooldown(tx, session.userId);
       if (!decision.allowed) {
         return error(
@@ -108,7 +121,7 @@ export async function POST(req: NextRequest) {
       });
 
       const generation = await tx.generation.create({
-        data: { userId: session.userId, cvId: cv.id, templateId },
+        data: { userId: session.userId, cvId: cv.id, templateId, draftId },
         select: { id: true, generatedAt: true },
       });
 
