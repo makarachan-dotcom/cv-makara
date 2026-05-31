@@ -3,15 +3,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CVCanvas } from "@/components/canvas/CVCanvas";
 import { CustomizationPanel } from "@/components/canvas/CustomizationPanel";
+import { LayoutPicker } from "@/components/cv/LayoutPicker";
+import { PhonePreview } from "@/components/cv/PhonePreview";
 import { StreakMatrix } from "@/components/StreakMatrix";
 import { KhmerInterviewer } from "@/components/interview/KhmerInterviewer";
-import { CvDocument } from "@/components/cv/CvDocument";
 import {
   EMPTY_DRAFT,
-  fontClassFor,
   type KhmerFontKey,
   type MakaraCvDraft,
 } from "@/lib/cv-draft";
+import { DEFAULT_CV_LAYOUT, type CvLayoutId } from "@/templates/registry";
 import type { IndustryId } from "@/lib/interview/engine";
 import type { TemplateMeta } from "@/templates/registry";
 import type { CVInput } from "@/types/cv";
@@ -26,10 +27,6 @@ interface Props {
     lastCheckInDate: string | null;
   };
 }
-
-// A4 surface dimensions (px @96dpi) used to scale the live preview.
-const A4_WIDTH = 794;
-const A4_HEIGHT = 1123;
 
 // Minimal demo CV used as the body for the "Deploy to Web" generation request.
 // The strict CVInput pipeline (/api/generate) is preserved exactly as-is; this
@@ -98,6 +95,7 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
   const [font, setFont] = useState<KhmerFontKey>("kantumruy");
   const [lineSpacing, setLineSpacing] = useState(1.7);
   const [accent, setAccent] = useState("#0f766e");
+  const [layout, setLayout] = useState<CvLayoutId>(DEFAULT_CV_LAYOUT);
 
   // ---- Stepper lifecycle (re-hydratable for the "Rewrite" path) ------------
   const [phase, setPhase] = useState<FormPhase>("editing");
@@ -348,24 +346,28 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
             </div>
 
             <div className="border-b border-ink-800/60 px-4 py-3">
-              <CustomizationPanel
-                compact
-                font={font}
-                onFontChange={setFont}
-                lineSpacing={lineSpacing}
-                onLineSpacingChange={setLineSpacing}
-                accent={accent}
-                onAccentChange={setAccent}
-              />
+              <div className="space-y-3">
+                <LayoutPicker value={layout} onChange={setLayout} />
+                <CustomizationPanel
+                  compact
+                  font={font}
+                  onFontChange={setFont}
+                  lineSpacing={lineSpacing}
+                  onLineSpacingChange={setLineSpacing}
+                  accent={accent}
+                  onAccentChange={setAccent}
+                />
+              </div>
             </div>
 
-            <div className="flex-1 overflow-auto bg-ink-900/30 p-6">
-              <PreviewSurface
+            <div className="flex-1 overflow-auto p-6">
+              <PhonePreview
                 draft={previewDraft}
                 font={font}
                 lineSpacing={lineSpacing}
                 accent={accent}
-                scale={0.62}
+                variant={layout}
+                deviceWidth={356}
               />
             </div>
           </div>
@@ -415,24 +417,28 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
           </header>
 
           <div className="border-b border-ink-800 bg-ink-900/60 px-3 py-3">
-            <CustomizationPanel
-              compact
-              font={font}
-              onFontChange={setFont}
-              lineSpacing={lineSpacing}
-              onLineSpacingChange={setLineSpacing}
-              accent={accent}
-              onAccentChange={setAccent}
-            />
+            <div className="space-y-3">
+              <LayoutPicker value={layout} onChange={setLayout} />
+              <CustomizationPanel
+                compact
+                font={font}
+                onFontChange={setFont}
+                lineSpacing={lineSpacing}
+                onLineSpacingChange={setLineSpacing}
+                accent={accent}
+                onAccentChange={setAccent}
+              />
+            </div>
           </div>
 
-          <div className="flex-1 overflow-auto bg-ink-900/30 p-4">
-            <PreviewSurface
+          <div className="flex-1 overflow-auto p-4">
+            <PhonePreview
               draft={previewDraft}
               font={font}
               lineSpacing={lineSpacing}
               accent={accent}
-              scale={0.44}
+              variant={layout}
+              deviceWidth={320}
             />
           </div>
         </div>
@@ -480,47 +486,5 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
         </div>
       )}
     </main>
-  );
-}
-
-// -----------------------------------------------------------------------------
-// PreviewSurface — scaled, bounded A4 render of the live CvDocument. The CV is
-// always laid out at its true 794×1123 proportions and scaled via CSS transform
-// so it stays pixel-faithful to the exported PDF. Width is reserved exactly
-// (794·scale); the base A4 height is compensated so there is no dead space.
-// -----------------------------------------------------------------------------
-function PreviewSurface({
-  draft,
-  font,
-  lineSpacing,
-  accent,
-  scale,
-}: {
-  draft: MakaraCvDraft;
-  font: KhmerFontKey;
-  lineSpacing: number;
-  accent: string;
-  scale: number;
-}) {
-  return (
-    <div className="mx-auto" style={{ width: A4_WIDTH * scale }}>
-      <div
-        style={{
-          width: A4_WIDTH,
-          transform: `scale(${scale})`,
-          transformOrigin: "top left",
-          marginBottom: `${-(1 - scale) * A4_HEIGHT}px`,
-        }}
-      >
-        <div className="shadow-2xl ring-1 ring-black/10">
-          <CvDocument
-            draft={draft}
-            fontClass={fontClassFor(font)}
-            lineSpacing={lineSpacing}
-            accent={accent}
-          />
-        </div>
-      </div>
-    </div>
   );
 }

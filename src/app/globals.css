@@ -91,3 +91,131 @@ button:focus-visible,
     display: none !important;
   }
 }
+
+
+/* =========================================================================
+   CINEMATIC CSS-3D VIBRANCY LAYER (NO WEBGL)
+   -------------------------------------------------------------------------
+   Per the product direction we deliberately avoid Three.js / R3F (heavy, and a
+   known cause of mobile GPU crashes). Instead we get a "living", premium feel
+   from pure CSS: animated organic mesh-gradient backdrops, glassmorphic cards
+   (backdrop-blur), and cinematic 3D tilt-on-hover. Every animation is driven by
+   compositor-only properties (transform / opacity / background-position) so it
+   holds a rock-solid 60fps on mobile browsers. Motion is fully disabled under
+   prefers-reduced-motion.
+   ========================================================================= */
+
+/* --- Animated organic mesh gradient backdrop --------------------------- */
+.mesh-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: #07080c;
+  background-image:
+    radial-gradient(at 18% 22%, rgba(34, 211, 238, 0.16) 0px, transparent 45%),
+    radial-gradient(at 82% 18%, rgba(124, 58, 237, 0.16) 0px, transparent 45%),
+    radial-gradient(at 72% 78%, rgba(13, 148, 136, 0.14) 0px, transparent 45%),
+    radial-gradient(at 28% 82%, rgba(244, 180, 0, 0.10) 0px, transparent 45%);
+  background-size: 200% 200%;
+  animation: mesh-drift 28s ease-in-out infinite;
+  will-change: background-position;
+}
+
+@keyframes mesh-drift {
+  0%   { background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%; }
+  50%  { background-position: 40% 30%, 60% 20%, 50% 70%, 30% 60%; }
+  100% { background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%; }
+}
+
+/* A second, slower aurora sweep layered on top for depth. */
+.mesh-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: conic-gradient(
+    from 180deg at 50% 50%,
+    rgba(34, 211, 238, 0.05),
+    rgba(124, 58, 237, 0.05),
+    rgba(13, 148, 136, 0.05),
+    rgba(34, 211, 238, 0.05)
+  );
+  filter: blur(60px);
+  animation: aurora-spin 60s linear infinite;
+  will-change: transform;
+}
+
+@keyframes aurora-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Glassmorphic surface ---------------------------------------------- */
+.glass-card {
+  background: rgba(20, 24, 33, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 24px 60px -28px rgba(0, 0, 0, 0.7);
+}
+
+/* --- Cinematic 3D tilt / lift on hover ---------------------------------- */
+.tilt-3d {
+  transform: perspective(900px) translateZ(0);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.tilt-3d:hover {
+  transform: perspective(900px) rotateX(2.5deg) rotateY(-3deg) translateY(-4px) scale(1.012);
+  box-shadow: 0 30px 60px -24px rgba(34, 211, 238, 0.35);
+}
+
+/* Subtle floating idle motion for hero accents. */
+.float-soft {
+  animation: float-soft 7s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+/* Animated gradient text for hero headlines. */
+.text-gradient-flow {
+  background: linear-gradient(90deg, #22d3ee, #7c3aed, #0d9488, #22d3ee);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: text-flow 8s ease infinite;
+}
+@keyframes text-flow {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Accessibility + battery: kill all decorative motion when requested. */
+@media (prefers-reduced-motion: reduce) {
+  .mesh-backdrop,
+  .mesh-backdrop::after,
+  .float-soft,
+  .text-gradient-flow {
+    animation: none !important;
+  }
+  .tilt-3d {
+    transition: none !important;
+  }
+  .tilt-3d:hover {
+    transform: none;
+  }
+}
+
+/* Never leak the decorative 3D/animation layers into the printed CV. */
+@media print {
+  .mesh-backdrop {
+    display: none !important;
+  }
+}

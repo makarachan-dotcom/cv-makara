@@ -24,7 +24,7 @@ interface ExportSelectorProps {
    * When provided, enables the server-side (headless Chromium) PDF export with
    * the current live styling. Requires a Telegram session + a saved draft.
    */
-  serverPdf?: { font: string; spacing: number; accent: string; draftId?: string };
+  serverPdf?: { font: string; spacing: number; accent: string; variant?: string; draftId?: string };
 }
 
 const FORMATS = [
@@ -85,6 +85,7 @@ export function ExportSelector({ draft, nodeRef, serverPdf }: ExportSelectorProp
           font: serverPdf.font,
           spacing: serverPdf.spacing,
           accent: serverPdf.accent,
+          variant: serverPdf.variant,
           draftId: serverPdf.draftId,
         },
         draft.fullName,
