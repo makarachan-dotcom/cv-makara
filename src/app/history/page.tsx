@@ -36,7 +36,7 @@ export default async function HistoryPage() {
           href="/dashboard"
           className="rounded border border-ink-700 px-3 py-1.5 text-xs text-ink-200 hover:bg-ink-800"
         >
-          ← Dashboard
+          ← ត្រឡប់ក្រោយ · Dashboard
         </Link>
       </header>
 

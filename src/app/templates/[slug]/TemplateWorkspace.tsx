@@ -248,9 +248,9 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
         {/* =================== LEFT: step-by-step intake form =================== */}
         <section className="relative flex min-h-screen flex-col border-ink-800/60 lg:border-r">
-          <header className="border-b border-ink-800/60 px-6 py-5">
+              <header className="border-b border-ink-800/60 px-6 py-5">
             <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-accent-cyan">
-              Template · {template.category}
+              គំរូ CV · {template.category}
             </p>
             <h1 className="mt-1 text-xl font-semibold leading-khmer-tight">{template.name}</h1>
             <p className="mt-1 max-w-md text-xs leading-khmer-tight text-ink-200">
@@ -272,7 +272,7 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
               <div className="space-y-4 rounded-2xl border border-accent-emerald/30 bg-accent-emerald/5 p-5">
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-accent-emerald">
-                    ✓ Draft saved · បានរក្សាទុក
+                    ✓ បានរក្សាទុក · Draft saved
                   </p>
                   <h2 className="mt-1 text-lg font-semibold leading-khmer-tight">
                     {savedDraft?.fullName || "CV របស់អ្នក"}
@@ -336,12 +336,12 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
           <div className="sticky top-0 flex h-screen flex-col">
             <div className="flex items-center justify-between border-b border-ink-800/60 px-6 py-4">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-accent-cyan">
-                  Live preview · real-time
-                </p>
-                <h2 className="text-sm font-semibold leading-khmer-tight text-ink-100">
-                  មើលគំរូ CV ផ្ទាល់ · A4
-                </h2>
+            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-accent-cyan">
+              មើលគំរូផ្ទាល់ · Live Preview
+            </p>
+            <h2 className="text-sm font-semibold leading-khmer-tight text-ink-100">
+              គំរូ CV ទំហំ A4
+            </h2>
               </div>
             </div>
 
@@ -378,9 +378,9 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
       <button
         type="button"
         onClick={openMobilePreview}
-        className="fixed bottom-5 left-1/2 z-40 -translate-x-1/2 rounded-full bg-accent-cyan px-6 py-3 text-sm font-semibold text-ink-950 shadow-lg shadow-accent-cyan/20 transition hover:bg-accent-cyan/90 lg:hidden"
+        className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-accent-cyan px-6 py-3 text-sm font-semibold text-ink-950 shadow-lg shadow-accent-cyan/20 transition hover:bg-accent-cyan/90 lg:hidden w-full max-w-[200px] whitespace-nowrap"
       >
-        មើលគំរូ CV / Preview
+        មើលគំរូ CV / Click Preview
       </button>
 
       {/* ===================== MOBILE: full-screen preview modal ================ */}

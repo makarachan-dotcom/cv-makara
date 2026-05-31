@@ -83,8 +83,8 @@ const STAGE_TITLES: Record<Stage, string> = {
   review: "ពិនិត្យ និងបង្កើត CV",
 };
 
-const MIDDLE_GRADES = ["ទី៧", "ទី៨", "ទី៩"] as const;
-const HIGH_GRADES = ["ទី១០", "ទី១១", "ទី១២"] as const;
+const MIDDLE_GRADES = ["ទី៧", "ទី៨", "ទី៩", "ទី១០", "ទី១១", "ទី១២"] as const;
+const HIGH_GRADES = ["ឆ្នាំទី ១", "ឆ្នាំទី ២", "ឆ្នាំទី ៣", "ឆ្នាំទី ៤", "ឆ្នាំទី ៥", "ឆ្នាំទី ៦", "ឆ្នាំទី ៧", "ឆ្នាំទី ៨"] as const;
 
 /** Read a File into a base64 data URL (client-side, no upload). */
 function fileToDataUrl(file: File): Promise<string> {

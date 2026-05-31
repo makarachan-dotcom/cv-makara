@@ -12,7 +12,7 @@ export const ProfileSchema = z.object({
   firstName: z.string().trim().min(1).max(64),
   lastName: z.string().trim().min(1).max(64),
   headline: z.string().trim().min(1).max(160),
-  bio: z.string().trim().min(40).max(1200),
+  bio: z.string().trim().min(40).max(10000),
   telegramHandle: z.string().regex(TelegramHandleRegex, "Invalid Telegram handle"),
   email: z.string().email().optional(),
   location: z.string().trim().max(120).optional(),
@@ -67,9 +67,9 @@ export const SkillSchema = z.object({
 export type Skill = z.infer<typeof SkillSchema>;
 
 export const EducationEntrySchema = z.object({
-  institution: z.string().trim().min(1).max(160),
-  degree: z.string().trim().min(1).max(160),
-  field: z.string().trim().max(160).optional(),
+  institution: z.string().trim().min(1).max(500),
+  degree: z.string().trim().min(1).max(500),
+  field: z.string().trim().max(500).optional(),
   startDate: z.string().regex(Iso8601Regex),
   endDate: z.union([z.string().regex(Iso8601Regex), z.literal("present")]).nullable(),
   highlights: z.array(z.string().trim().min(1).max(240)).max(6).default([]),

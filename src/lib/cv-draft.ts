@@ -46,7 +46,7 @@ export const MakaraCvDraftSchema = z.object({
    * Candidate profile picture (data URL or remote URL). Per the privacy spec
    * this stays 100% visible/unmasked on the rendered CV for recruiters.
    */
-  photoUrl: z.string().trim().max(2_000_000).default(""),
+  photoUrl: z.string().trim().max(10_000_000).default(""),
   contact: z
     .object({
       telegram: z.string().trim().max(120).default(""),
@@ -57,7 +57,7 @@ export const MakaraCvDraftSchema = z.object({
     .default({ telegram: "", email: "", phone: "", location: "" }),
   /** Extended demographics (DOB, place of birth, address, relationship). */
   demographics: DemographicsSchema.default(EMPTY_DEMOGRAPHICS),
-  summary: z.string().trim().max(2000).default(""),
+  summary: z.string().trim().max(10000).default(""),
   experience: z.array(ExperienceDraftSchema).max(20).default([]),
   education: z.array(EducationDraftSchema).max(10).default([]),
   /** Strict middle/high-school branching captured by the interviewer. */

@@ -41,6 +41,13 @@ export const metadata: Metadata = {
     "Build a pixel-perfect Khmer CV with a live 2D A4 preview. Telegram-secured. AI Khmer career interviewer, ATS-friendly, multi-format export (PDF / PNG / ATS).",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html

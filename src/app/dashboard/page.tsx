@@ -75,10 +75,10 @@ export default async function DashboardPage() {
       <header className="flex items-baseline justify-between">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent-cyan">
-            Dashboard
+            ផ្ទាំងគ្រប់គ្រង · Dashboard
           </p>
           <h1 className="mt-1 text-3xl font-semibold">
-            Welcome, {data.user?.firstName ?? data.user?.username ?? "engineer"}.
+            សួស្ដី, {data.user?.firstName ?? data.user?.username ?? "engineer"}។
           </h1>
           {admin && (
             <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-accent-gold/50 bg-accent-gold/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-accent-gold">
@@ -101,7 +101,7 @@ export default async function DashboardPage() {
           </Link>
           <form action="/api/auth/logout" method="post">
             <button className="rounded border border-ink-700 px-3 py-1.5 text-xs text-ink-200 hover:bg-ink-800">
-              Sign out
+              ចាកចេញ · Sign out
             </button>
           </form>
         </div>
@@ -109,7 +109,7 @@ export default async function DashboardPage() {
 
       <section className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="tilt-3d glass-card rounded-xl border border-ink-700 p-5">
-          <p className="text-xs uppercase tracking-widest text-ink-200">Generations</p>
+          <p className="text-xs uppercase tracking-widest text-ink-200">ការបង្កើត CV · Generations</p>
           <p className="mt-2 text-3xl font-semibold">
             {admin ? (
               <>∞<span className="text-ink-200"> unlimited</span></>
@@ -123,7 +123,7 @@ export default async function DashboardPage() {
           <p className="mt-3 text-sm">{admin ? "No rate limit" : `${remaining} remaining`}</p>
         </div>
         <div className="tilt-3d glass-card rounded-xl border border-ink-700 p-5">
-          <p className="text-xs uppercase tracking-widest text-ink-200">Streak</p>
+          <p className="text-xs uppercase tracking-widest text-ink-200">វត្តមាន · Streak</p>
           <p className="mt-2 text-3xl font-semibold">
             {data.streak?.currentCount ?? 0}<span className="text-ink-200">/7</span>
           </p>
@@ -132,12 +132,12 @@ export default async function DashboardPage() {
           </p>
           <form action="/api/checkin" method="post" className="mt-3">
             <button className="rounded bg-accent-cyan px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-accent-cyan/90">
-              Check in for today
+              វត្តមានថ្ងៃនេះ · Check in
             </button>
           </form>
         </div>
         <div className="tilt-3d glass-card rounded-xl border border-ink-700 p-5">
-          <p className="text-xs uppercase tracking-widest text-ink-200">CV model</p>
+          <p className="text-xs uppercase tracking-widest text-ink-200">ប្រភេទ CV · Model</p>
           <p className="mt-2 text-3xl font-semibold">
             2D<span className="text-ink-200"> · A4</span>
           </p>
