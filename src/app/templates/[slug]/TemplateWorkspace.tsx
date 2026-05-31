@@ -5,7 +5,6 @@ import { CVCanvas } from "@/components/canvas/CVCanvas";
 import { CustomizationPanel } from "@/components/canvas/CustomizationPanel";
 import { LayoutPicker } from "@/components/cv/LayoutPicker";
 import { PhonePreview } from "@/components/cv/PhonePreview";
-import { StreakMatrix } from "@/components/StreakMatrix";
 import { KhmerInterviewer } from "@/components/interview/KhmerInterviewer";
 import {
   EMPTY_DRAFT,
@@ -15,7 +14,6 @@ import {
 import { DEFAULT_CV_LAYOUT, type CvLayoutId } from "@/templates/registry";
 import type { IndustryId } from "@/lib/interview/engine";
 import type { TemplateMeta } from "@/templates/registry";
-import type { CVInput } from "@/types/cv";
 import { DEMO_FAST_FILL_DRAFT } from "@/lib/demo-data";
 
 interface Props {
@@ -39,51 +37,6 @@ interface Props {
     };
   } | null;
 }
-
-// Minimal demo CV used as the body for the "Deploy to Web" generation request.
-const DEMO_CV: CVInput = {
-  profile: {
-    firstName: "Avery",
-    lastName: "Chen",
-    headline: "Principal full-stack architect",
-    bio: "Twelve years shipping production systems across fintech and infra. Loves systems that survive scale and teams that survive each other.",
-    telegramHandle: "@avery",
-    portfolioLinks: ["https://example.com"],
-  },
-  experience: [
-    {
-      company: "Acme Cloud",
-      role: "Staff Engineer",
-      startDate: "2022-04-01",
-      endDate: "present",
-      achievements: [
-        "Led migration of monolith to event-sourced microservices",
-        "Cut p99 latency from 480ms to 120ms in 4 months",
-        "Built and shipped an internal SDK adopted by 14 teams",
-        "Mentored 6 engineers to senior promotion",
-        "Owned the on-call rotation reliability targets",
-      ],
-    },
-  ],
-  skills: [
-    { name: "TypeScript", domain: "language", proficiency: 96 },
-    { name: "Postgres", domain: "data", proficiency: 88 },
-    { name: "React Three Fiber", domain: "framework", proficiency: 78 },
-    { name: "Rust", domain: "language", proficiency: 64 },
-    { name: "AWS", domain: "platform", proficiency: 82 },
-    { name: "Kubernetes", domain: "infrastructure", proficiency: 71 },
-    { name: "GLSL", domain: "framework", proficiency: 58 },
-    { name: "Leadership", domain: "leadership", proficiency: 80 },
-  ],
-  education: [],
-  projects: [
-    {
-      name: "NURF MY CV",
-      summary: "A Telegram-secured CV builder gamified behind a 7-day streak.",
-      stack: ["Next.js", "Prisma", "Supabase"],
-    },
-  ],
-};
 
 interface ActiveDraftSummary {
   id: string;
@@ -109,11 +62,7 @@ async function safeParseJson<T>(res: Response): Promise<T | null> {
   }
 }
 
-export function TemplateWorkspace({ template, unlocked, streak, initialHistory }: Props) {
-  const [showLockedModal, setShowLockedModal] = useState(false);
-  const [deploying, setDeploying] = useState(false);
-  const [deployResult, setDeployResult] = useState<string | null>(null);
-
+export function TemplateWorkspace({ template, initialHistory }: Props) {
   // ---- Live 2D document state (drives the real-time A4 preview) ------------
   const [liveDraft, setLiveDraft] = useState<MakaraCvDraft>(() => 
     initialHistory ? initialHistory.payload : { ...structuredClone(EMPTY_DRAFT) }
@@ -268,54 +217,6 @@ export function TemplateWorkspace({ template, unlocked, streak, initialHistory }
     setInterviewerKey((k) => k + 1);
   }, []);
 
-  const handleDeploy = async () => {
-    if (!draftState) {
-      setDeployResult("សូមបញ្ចប់ការសម្ភាសន៍ AI ខាងឆ្វេងជាមុនសិន។");
-      return;
-    }
-    if (!unlocked) {
-      setShowLockedModal(true);
-      return;
-    }
-    setDeploying(true);
-    setDeployResult(null);
-    try {
-      const res = await fetch(`/api/generate?template=${encodeURIComponent(template.id)}`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(DEMO_CV),
-      });
-      const body = await safeParseJson<Record<string, unknown>>(res);
-      if (!res.ok) {
-        const errObj = body?.error as { code?: string; message?: string } | undefined;
-        if (errObj?.code === "DRAFT_REQUIRED") {
-          setDraftState(null);
-          setPhase("editing");
-          setDeployResult("ត្រូវការការសម្ភាសន៍ AI ម្ដងទៀត។");
-          return;
-        }
-        setDeployResult(`បរាជ័យ: ${errObj?.message ?? `HTTP ${res.status}`}`);
-      } else {
-        setDeployResult("បានជោគជ័យ! សូមពិនិត្យមើល Dashboard របស់អ្នកសម្រាប់តំណភ្ជាប់ CV។");
-      }
-    } catch (err) {
-      setDeployResult(err instanceof Error ? err.message : "កំហុសមិនស្គាល់");
-    } finally {
-      setDeploying(false);
-    }
-  };
-
-  const deployLabel =
-    draftState === undefined
-      ? "កំពុងពិនិត្យ…"
-      : !draftState
-        ? "បំពេញការសម្ភាសន៍ជាមុនសិន"
-        : unlocked
-          ? deploying
-            ? "កំពុងបញ្ជូន…"
-            : "ដាក់ផ្សាយទៅកាន់ Web"
-          : "ជាប់សោ — មើល streak";
-
   return (
     <main className="relative min-h-screen text-ink-100">
       <CVCanvas accent={accent} className="fixed inset-0 -z-10" />
@@ -375,35 +276,15 @@ export function TemplateWorkspace({ template, unlocked, streak, initialHistory }
             )}
           </div>
 
-          <footer className="space-y-2 border-t border-ink-800/60 bg-ink-950/80 px-5 pt-4 pb-24 backdrop-blur lg:pb-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={handleDeploy}
-                disabled={deploying || draftState === undefined}
-                className={
-                  "rounded-full px-5 py-2.5 text-sm font-semibold transition disabled:opacity-50 " +
-                  (unlocked
-                    ? "bg-accent-cyan text-ink-950 hover:bg-accent-cyan/90"
-                    : "border border-accent-gold/50 bg-ink-900 text-accent-gold hover:bg-ink-800")
-                }
-              >
-                {deployLabel}
-              </button>
-
+          <footer className="border-t border-ink-800/60 bg-ink-950/80 px-5 pt-4 pb-24 backdrop-blur lg:pb-4">
             {draftState && (
               <button
                 onClick={handleFastFillDraft}
-                className="rounded-full border border-accent-emerald/40 bg-ink-900/80 px-3 py-1.5 text-[11px] text-accent-emerald hover:bg-accent-emerald/20 hover:border-accent-emerald/60 transition cursor-pointer active:scale-95"
+                className="rounded-full border border-accent-emerald/40 bg-ink-900/80 px-3 py-1.5 text-[11px] text-accent-emerald transition hover:border-accent-emerald/60 hover:bg-accent-emerald/20 active:scale-95"
                 title="ចុចដើម្បីបង្កើត CV ដោយស្វ័យប្រវត្តិ · Click to auto-fill"
               >
                 ✓ Draft · {draftState.fullName || "បានរក្សាទុក"}
               </button>
-            )}
-            </div>
-            {deployResult && (
-              <span className="block text-xs leading-khmer-tight text-ink-200" role="status">
-                {deployResult}
-              </span>
             )}
           </footer>
         </section>
@@ -470,11 +351,11 @@ export function TemplateWorkspace({ template, unlocked, streak, initialHistory }
           aria-modal="true"
           aria-label="CV preview"
           className={
-            "fixed inset-0 z-50 flex flex-col bg-ink-950 transition-all duration-200 ease-out lg:hidden " +
+            "fixed inset-0 z-50 flex min-h-0 flex-col overflow-hidden bg-ink-950 transition-all duration-200 ease-out lg:hidden " +
             (mobileVisible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0")
           }
         >
-          <header className="flex items-center justify-between gap-2 border-b border-ink-800 bg-ink-900 px-4 py-3">
+          <header className="flex shrink-0 items-center justify-between gap-2 border-b border-ink-800 bg-ink-900 px-4 py-3">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -496,7 +377,7 @@ export function TemplateWorkspace({ template, unlocked, streak, initialHistory }
             </span>
           </header>
 
-          <div className="border-b border-ink-800 bg-ink-900/60 px-3 py-3">
+          <div className="shrink-0 border-b border-ink-800 bg-ink-900/60 px-3 py-3">
             <div className="space-y-3">
               <LayoutPicker value={layout} onChange={setLayout} />
               <CustomizationPanel
@@ -511,7 +392,10 @@ export function TemplateWorkspace({ template, unlocked, streak, initialHistory }
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto p-4">
+          <div
+            className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 pb-8"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
             <PhonePreview
               draft={previewDraft}
               font={font}
@@ -524,45 +408,6 @@ export function TemplateWorkspace({ template, unlocked, streak, initialHistory }
         </div>
       )}
 
-      {showLockedModal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 grid place-items-center bg-ink-950/80 p-4 backdrop-blur"
-          onClick={() => setShowLockedModal(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl border border-ink-700 bg-ink-900 p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-lg font-semibold">គំរូ Premium ត្រូវបានជាប់សោ</h2>
-            <p className="mt-2 text-sm text-ink-200">
-              អ្នកអាចសរសេរ និងមើលគំរូ CV នេះបានពេញលេញ ប៉ុន្តែការដាក់ផ្សាយតម្រូវឱ្យមានការឆែកឈ្មោះ (Check-in) រយៈពេល ៧ ថ្ងៃជាប់គ្នា។
-            </p>
-            <div className="mt-4">
-              <StreakMatrix
-                currentCount={streak.currentCount}
-                streakTarget={streak.target}
-                lastCheckInDate={streak.lastCheckInDate}
-                today={streak.today}
-              />
-            </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                className="rounded border border-ink-700 px-3 py-1.5 text-xs text-ink-200 hover:bg-ink-800"
-                onClick={() => setShowLockedModal(false)}
-              >
-                បិទ / Close
-              </button>
-              <form action="/api/checkin" method="post">
-                <button className="rounded bg-accent-cyan px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-accent-cyan/90">
-                  ឆែកឈ្មោះសម្រាប់ថ្ងៃនេះ / Check in
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
