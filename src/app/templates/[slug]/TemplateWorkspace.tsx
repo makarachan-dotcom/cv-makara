@@ -16,6 +16,7 @@ import { DEFAULT_CV_LAYOUT, type CvLayoutId } from "@/templates/registry";
 import type { IndustryId } from "@/lib/interview/engine";
 import type { TemplateMeta } from "@/templates/registry";
 import type { CVInput } from "@/types/cv";
+import { DEMO_FAST_FILL_DRAFT } from "@/lib/demo-data";
 
 interface Props {
   template: TemplateMeta;
@@ -221,6 +222,39 @@ export function TemplateWorkspace({ template, unlocked, streak, initialHistory }
     setAccent(newAccent);
   }, []);
 
+  // ---- 100x Fast-Fill Automation Trigger ----
+  const handleFastFillDraft = useCallback(async () => {
+    // Inject the demo data instantly into the form state
+    setLiveDraft(DEMO_FAST_FILL_DRAFT);
+    setSavedDraft(DEMO_FAST_FILL_DRAFT);
+    setSavedIndustry("it" as IndustryId); // Default industry for demo
+    setPhase("saved");
+
+    // Trigger a background database upsert for universal device continuity
+    try {
+      const res = await fetch("/api/drafts", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          data: DEMO_FAST_FILL_DRAFT,
+          industry: "it",
+        }),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { draft?: { id: string } };
+        if (json.draft?.id) {
+          setDraftState({
+            id: json.draft.id,
+            fullName: DEMO_FAST_FILL_DRAFT.fullName,
+            headline: DEMO_FAST_FILL_DRAFT.headline,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("[FAST_FILL_SYNC_ERROR]", err);
+    }
+  }, []);
+
   const handleRewrite = useCallback(() => {
     setPhase("editing");
     setInterviewerKey((k) => k + 1);
@@ -356,11 +390,15 @@ export function TemplateWorkspace({ template, unlocked, streak, initialHistory }
                 {deployLabel}
               </button>
 
-              {draftState && (
-                <span className="rounded-full border border-accent-emerald/40 bg-ink-900/80 px-3 py-1.5 text-[11px] text-accent-emerald">
-                  ✓ Draft · {draftState.fullName || "បានរក្សាទុក"}
-                </span>
-              )}
+            {draftState && (
+              <button
+                onClick={handleFastFillDraft}
+                className="rounded-full border border-accent-emerald/40 bg-ink-900/80 px-3 py-1.5 text-[11px] text-accent-emerald hover:bg-accent-emerald/20 hover:border-accent-emerald/60 transition cursor-pointer active:scale-95"
+                title="ចុចដើម្បីបង្កើត CV ដោយស្វ័យប្រវត្តិ · Click to auto-fill"
+              >
+                ✓ Draft · {draftState.fullName || "បានរក្សាទុក"}
+              </button>
+            )}
             </div>
             {deployResult && (
               <span className="block text-xs leading-khmer-tight text-ink-200" role="status">

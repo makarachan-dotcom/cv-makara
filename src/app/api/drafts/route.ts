@@ -23,16 +23,36 @@ function fail(code: string, message: string, status: number, extra: Record<strin
   );
 }
 
-/** GET /api/drafts — the caller's current ACTIVE draft (or null). */
+/** GET /api/drafts — the caller's current ACTIVE draft (or null) with cross-device sync. */
 export async function GET() {
-  const session = await resolveSessionFromCookieStore();
-  if (!session) return fail("AUTH_REQUIRED", "Authentication required.", 401);
+  try {
+    const session = await resolveSessionFromCookieStore();
+    if (!session) return fail("AUTH_REQUIRED", "Authentication required.", 401);
 
-  const draft = await getActiveDraft(session.userId);
-  return NextResponse.json({ draft }, { headers: { "cache-control": "no-store" } });
+    const draft = await getActiveDraft(session.userId);
+    return NextResponse.json(
+      { draft },
+      {
+        status: 200,
+        headers: {
+          "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "pragma": "no-cache",
+          "expires": "0",
+        },
+      }
+    );
+  } catch (err) {
+    console.error("[DRAFT_GET_ERROR]", err);
+    return fail(
+      "DRAFT_GET_FAILED",
+      "Failed to retrieve draft. Please try again.",
+      500,
+      { error: err instanceof Error ? err.message : String(err) }
+    );
+  }
 }
 
-/** POST /api/drafts — atomically save a synthesized draft as the ACTIVE draft. */
+/** POST /api/drafts — atomically save a synthesized draft as the ACTIVE draft with cross-device sync. */
 export async function POST(req: NextRequest) {
   const session = await resolveSessionFromCookieStore();
   if (!session) return fail("AUTH_REQUIRED", "Authentication required.", 401);
@@ -51,11 +71,33 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const saved = await saveActiveDraft(session.userId, {
-    industry: parsed.data.industry,
-    data: parsed.data.data,
-    answers: parsed.data.answers,
-  });
+  try {
+    // Atomically save the draft with universal device continuity
+    const saved = await saveActiveDraft(session.userId, {
+      industry: parsed.data.industry,
+      data: parsed.data.data,
+      answers: parsed.data.answers,
+    });
 
-  return NextResponse.json({ draft: saved }, { headers: { "cache-control": "no-store" } });
+    // Return the saved draft with explicit cache-control headers
+    return NextResponse.json(
+      { draft: saved },
+      {
+        status: 200,
+        headers: {
+          "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "pragma": "no-cache",
+          "expires": "0",
+        },
+      }
+    );
+  } catch (err) {
+    console.error("[DRAFT_SAVE_ERROR]", err);
+    return fail(
+      "DRAFT_SAVE_FAILED",
+      "Failed to save draft. Please try again.",
+      500,
+      { error: err instanceof Error ? err.message : String(err) }
+    );
+  }
 }
