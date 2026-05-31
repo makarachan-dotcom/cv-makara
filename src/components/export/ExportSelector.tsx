@@ -128,7 +128,10 @@ export function ExportSelector({ draft, nodeRef, serverPdf }: ExportSelectorProp
           type="button"
           disabled={busy !== null}
           onClick={runServerPdf}
-          className="flex w-full items-center justify-between rounded-lg border border-accent-emerald/40 bg-accent-emerald/5 p-3 text-left transition hover:bg-accent-emerald/10 disabled:opacity-50"
+          className={
+            "flex w-full items-center justify-between rounded-lg border border-accent-emerald/40 bg-accent-emerald/5 p-3 text-left transition hover:bg-accent-emerald/10 disabled:opacity-50" +
+            (busy === "server-pdf" ? " neon-shimmer" : "")
+          }
         >
           <span>
             <span className="block text-sm font-semibold text-ink-100">PDF · ម៉ាស៊ីនមេ</span>

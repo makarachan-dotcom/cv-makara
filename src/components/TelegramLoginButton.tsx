@@ -171,15 +171,21 @@ export function TelegramLoginButton({ buttonLabel = "Sign in with Telegram" }: P
       ) : null}
 
       {phase === "starting" ? (
-        <div className="rounded-lg bg-white/5 px-4 py-3 text-sm text-ink-200">
-          Preparing your Telegram login link…
+        <div className="neon-shimmer rounded-lg bg-white/5 px-4 py-3 text-sm text-ink-200">
+          <span className="inline-flex items-center gap-2">
+            <span className="neon-pulse-dot" />
+            Preparing your Telegram login link…
+          </span>
         </div>
       ) : null}
 
       {phase === "waiting" && deepLink ? (
-        <div className="flex flex-col gap-3 rounded-lg bg-white/5 px-4 py-4 text-sm text-ink-200">
+        <div className="neon-shimmer-slow glass-card flex flex-col gap-3 rounded-lg px-4 py-4 text-sm text-ink-200">
           <p className="font-medium text-white">
-            Waiting for confirmation in Telegram…
+            <span className="inline-flex items-center gap-2">
+              <span className="neon-pulse-dot" />
+              Waiting for confirmation in Telegram…
+            </span>
           </p>
           <p className="text-xs leading-relaxed text-ink-200/80">
             A new tab opened to Telegram. Tap <strong>Start</strong> in the bot chat.
