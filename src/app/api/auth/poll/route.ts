@@ -77,6 +77,15 @@ export async function GET(req: NextRequest) {
     data: { status: "CONSUMED", consumedAt: new Date() },
   });
   if (claim.count === 0) {
+    // Same race-condition guard: another tab/request consumed the token but this
+    // client may already have received the session cookie from that request.
+    const existingSession = await resolveSessionFromCookieStore();
+    if (existingSession) {
+      return NextResponse.json(
+        { status: "ok", userId: existingSession.userId.toString(), role: existingSession.isAdmin ? "ADMIN" : "USER" },
+        { headers: { "cache-control": "no-store" } },
+      );
+    }
     return jsonError("TOKEN_ALREADY_USED", "Login token already exchanged for a session.", 409);
   }
 

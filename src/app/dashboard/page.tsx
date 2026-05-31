@@ -7,44 +7,65 @@ import { ROLLING_WINDOW_HOURS, GENERATIONS_PER_WINDOW } from "@/lib/cooldown";
 
 export const dynamic = "force-dynamic";
 
+// Safe fallback shape prevents null-pointer crashes (Digest: 555466527) when
+// the DB transaction fails on cold-start / pooled-connection / RLS setup.
+const SAFE_DATA = {
+  user: null as { firstName: string | null; lastName: string | null; username: string | null; role: string } | null,
+  generations: [] as { id: bigint; templateId: string; generatedAt: Date }[],
+  streak: null as { currentCount: number; longestCount: number; lastCheckInDate: Date | null } | null,
+};
+
 export default async function DashboardPage() {
   const session = await resolveSessionFromCookieStore();
   if (!session) redirect("/login?next=/dashboard");
 
   const admin = session.isAdmin;
 
-  const data = await withUserContext(session.userId, async (tx) => {
-    const user = await tx.user.findUnique({
-      where: { id: session.userId },
-      select: { firstName: true, lastName: true, username: true, role: true },
+  let data: typeof SAFE_DATA = SAFE_DATA;
+  try {
+    data = await withUserContext(session.userId, async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: session.userId },
+        select: { firstName: true, lastName: true, username: true, role: true },
+      });
+      const since = new Date(Date.now() - ROLLING_WINDOW_HOURS * 60 * 60 * 1000);
+      const generations = await tx.generation.findMany({
+        where: { userId: session.userId, generatedAt: { gte: since } },
+        orderBy: { generatedAt: "desc" },
+        take: 10,
+        select: { id: true, templateId: true, generatedAt: true },
+      });
+      const streak = await tx.streak.findUnique({ where: { userId: session.userId } });
+      return { user, generations, streak };
     });
-    const since = new Date(Date.now() - ROLLING_WINDOW_HOURS * 60 * 60 * 1000);
-    const generations = await tx.generation.findMany({
-      where: { userId: session.userId, generatedAt: { gte: since } },
-      orderBy: { generatedAt: "desc" },
-      take: 10,
-      select: { id: true, templateId: true, generatedAt: true },
-    });
-    const streak = await tx.streak.findUnique({ where: { userId: session.userId } });
-    return { user, generations, streak };
-  });
+  } catch (err) {
+    // Swallow RLS/transaction failures on cold starts — render with empty data
+    // instead of crashing the entire page with a 500.
+    console.error("[dashboard] data fetch failed, rendering with fallbacks:", err);
+  }
 
   // Platform-wide analytics — admin-only system administration view.
-  const analytics = admin
-    ? await (async () => {
-        const [users, totalGenerations, totalCvs, drafts, certificates, history] =
-          await Promise.all([
-            prisma.user.count(),
-            prisma.generation.count(),
-            prisma.cV.count(),
-            prisma.cvDraft.count({ where: { status: "ACTIVE" } }),
-            prisma.certificate.count(),
-            prisma.cVHistory.count(),
-          ]);
-        const admins = await prisma.user.count({ where: { role: "ADMIN" } });
-        return { users, admins, totalGenerations, totalCvs, drafts, certificates, history };
-      })()
-    : null;
+  let analytics: {
+    users: number; admins: number; totalGenerations: number;
+    totalCvs: number; drafts: number; certificates: number; history: number;
+  } | null = null;
+  if (admin) {
+    try {
+      const [users, totalGenerations, totalCvs, drafts, certificates, history] =
+        await Promise.all([
+          prisma.user.count(),
+          prisma.generation.count(),
+          prisma.cV.count(),
+          prisma.cvDraft.count({ where: { status: "ACTIVE" } }),
+          prisma.certificate.count(),
+          prisma.cVHistory.count(),
+        ]);
+      const admins = await prisma.user.count({ where: { role: "ADMIN" } });
+      analytics = { users, admins, totalGenerations, totalCvs, drafts, certificates, history };
+    } catch (err) {
+      console.error("[dashboard] analytics fetch failed:", err);
+    }
+  }
 
   const used = data.generations.length;
   const remaining = Math.max(0, GENERATIONS_PER_WINDOW - used);
@@ -159,7 +180,7 @@ export default async function DashboardPage() {
         </h2>
         <Link
           href={`/templates/${STANDARD_TEMPLATE_ID}`}
-          className="mt-3 flex flex-col items-start gap-4 rounded-2xl border border-accent-cyan/40 bg-accent-cyan/5 p-6 transition hover:border-accent-cyan hover:bg-accent-cyan/10 sm:flex-row sm:items-center sm:justify-between"
+          className="tilt-3d glass-card mt-3 flex flex-col items-start gap-4 rounded-2xl border border-accent-cyan/40 p-6 transition hover:border-accent-cyan sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
             <h3 className="text-lg font-semibold text-ink-100">

@@ -15,13 +15,24 @@ export default async function TemplatePage({ params }: { params: { slug: string 
 
   let unlocked = template.access === "free";
   if (!unlocked) {
-    const row = await prisma.templateUnlock.findUnique({
-      where: { userId_templateId: { userId: session.userId, templateId: template.id } },
-    });
-    unlocked = !!row;
+    try {
+      const row = await prisma.templateUnlock.findUnique({
+        where: { userId_templateId: { userId: session.userId, templateId: template.id } },
+      });
+      unlocked = !!row;
+    } catch (err) {
+      // If template-unlock lookup fails, default to locked (safe direction).
+      console.error("[template] unlock check failed:", err);
+    }
   }
 
-  const streak = await prisma.streak.findUnique({ where: { userId: session.userId } });
+  let streak: { currentCount: number; lastCheckInDate: Date | null } | null = null;
+  try {
+    streak = await prisma.streak.findUnique({ where: { userId: session.userId } });
+  } catch (err) {
+    console.error("[template] streak fetch failed:", err);
+  }
+
   const today = new Date();
   const todayKey = `${today.getUTCFullYear()}-${(today.getUTCMonth() + 1)
     .toString()

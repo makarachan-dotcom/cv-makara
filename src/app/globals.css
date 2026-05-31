@@ -105,71 +105,142 @@ button:focus-visible,
    prefers-reduced-motion.
    ========================================================================= */
 
-/* --- Animated organic mesh gradient backdrop --------------------------- */
+/* =========================================================================
+   EFFECT 1: FLUID ANIMATED AURORA VELVET BACKDROP
+   A moving, continuous deep-mesh aurora gradient that flows across the viewport
+   like premium dark luxury leather catching neon light. Multi-layered radial
+   gradients + conic aurora sweep + subtle noise texture overlay.
+   ========================================================================= */
 .mesh-backdrop {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-color: #07080c;
+  background-color: #050608;
   background-image:
-    radial-gradient(at 18% 22%, rgba(34, 211, 238, 0.16) 0px, transparent 45%),
-    radial-gradient(at 82% 18%, rgba(124, 58, 237, 0.16) 0px, transparent 45%),
-    radial-gradient(at 72% 78%, rgba(13, 148, 136, 0.14) 0px, transparent 45%),
-    radial-gradient(at 28% 82%, rgba(244, 180, 0, 0.10) 0px, transparent 45%);
-  background-size: 200% 200%;
-  animation: mesh-drift 28s ease-in-out infinite;
+    radial-gradient(ellipse 80% 60% at 12% 20%, rgba(34, 211, 238, 0.14) 0px, transparent 50%),
+    radial-gradient(ellipse 70% 55% at 88% 15%, rgba(124, 58, 237, 0.14) 0px, transparent 50%),
+    radial-gradient(ellipse 90% 70% at 75% 80%, rgba(13, 148, 136, 0.12) 0px, transparent 50%),
+    radial-gradient(ellipse 60% 50% at 25% 85%, rgba(244, 180, 0, 0.08) 0px, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(168, 85, 247, 0.06) 0px, transparent 40%);
+  background-size: 220% 220%;
+  animation: velvet-flow 32s ease-in-out infinite;
   will-change: background-position;
 }
 
-@keyframes mesh-drift {
-  0%   { background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%; }
-  50%  { background-position: 40% 30%, 60% 20%, 50% 70%, 30% 60%; }
-  100% { background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%; }
+@keyframes velvet-flow {
+  0%   { background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%, 50% 50%; }
+  25%  { background-position: 30% 20%, 70% 10%, 80% 60%, 20% 70%, 45% 55%; }
+  50%  { background-position: 50% 40%, 50% 30%, 50% 80%, 40% 50%, 55% 45%; }
+  75%  { background-position: 20% 30%, 80% 40%, 70% 50%, 30% 80%, 50% 50%; }
+  100% { background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%, 50% 50%; }
 }
 
-/* A second, slower aurora sweep layered on top for depth. */
+/* Aurora conic sweep — neon light catching dark velvet leather. */
+.mesh-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    rgba(34, 211, 238, 0.04) 0deg,
+    rgba(124, 58, 237, 0.06) 72deg,
+    rgba(13, 148, 136, 0.04) 144deg,
+    rgba(244, 180, 0, 0.03) 216deg,
+    rgba(34, 211, 238, 0.04) 288deg,
+    rgba(168, 85, 247, 0.05) 360deg
+  );
+  filter: blur(80px);
+  animation: aurora-velvet-spin 50s linear infinite;
+  will-change: transform;
+}
+
+/* Second aurora layer — counter-rotating for depth illusion. */
 .mesh-backdrop::after {
   content: "";
   position: absolute;
   inset: -20%;
   background: conic-gradient(
-    from 180deg at 50% 50%,
-    rgba(34, 211, 238, 0.05),
-    rgba(124, 58, 237, 0.05),
-    rgba(13, 148, 136, 0.05),
-    rgba(34, 211, 238, 0.05)
+    from 180deg at 45% 55%,
+    rgba(34, 211, 238, 0.03),
+    rgba(124, 58, 237, 0.04),
+    rgba(13, 148, 136, 0.03),
+    rgba(34, 211, 238, 0.03)
   );
   filter: blur(60px);
-  animation: aurora-spin 60s linear infinite;
+  animation: aurora-velvet-spin-reverse 70s linear infinite;
   will-change: transform;
 }
 
-@keyframes aurora-spin {
+@keyframes aurora-velvet-spin {
   to { transform: rotate(360deg); }
 }
-
-/* --- Glassmorphic surface ---------------------------------------------- */
-.glass-card {
-  background: rgba(20, 24, 33, 0.55);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 24px 60px -28px rgba(0, 0, 0, 0.7);
+@keyframes aurora-velvet-spin-reverse {
+  to { transform: rotate(-360deg); }
 }
 
-/* --- Cinematic 3D tilt / lift on hover ---------------------------------- */
+/* =========================================================================
+   EFFECT 2: INTERACTIVE ISOMETRIC PARALLAX CARDS
+   Enhanced 3D perspective depth layers with glassmorphic reflections. Items
+   tilt and shift beautifully on hover/touch with a layered reflection sheen.
+   ========================================================================= */
+.glass-card {
+  background: rgba(14, 18, 27, 0.6);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.3) inset,
+    0 28px 64px -32px rgba(0, 0, 0, 0.75),
+    0 4px 16px -4px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glassmorphic reflection sheen that travels across the card on hover. */
+.glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.03) 45%,
+    rgba(255, 255, 255, 0.06) 50%,
+    rgba(255, 255, 255, 0.03) 55%,
+    transparent 60%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+.glass-card:hover::before {
+  transform: translateX(100%);
+}
+
+/* Isometric parallax 3D tilt with enhanced depth layering. */
 .tilt-3d {
-  transform: perspective(900px) translateZ(0);
-  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: perspective(1200px) translateZ(0) rotateX(0deg) rotateY(0deg);
+  transform-style: preserve-3d;
+  transition:
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
 .tilt-3d:hover {
-  transform: perspective(900px) rotateX(2.5deg) rotateY(-3deg) translateY(-4px) scale(1.012);
-  box-shadow: 0 30px 60px -24px rgba(34, 211, 238, 0.35);
+  transform: perspective(1200px) rotateX(3deg) rotateY(-4deg) translateY(-6px) translateZ(12px) scale(1.015);
+  box-shadow:
+    0 36px 72px -28px rgba(34, 211, 238, 0.25),
+    0 12px 32px -12px rgba(124, 58, 237, 0.15),
+    0 2px 8px rgba(0, 0, 0, 0.5);
+}
+.tilt-3d:active {
+  transform: perspective(1200px) rotateX(1deg) rotateY(-1deg) translateY(-2px) scale(0.995);
+  transition-duration: 0.15s;
 }
 
 /* Subtle floating idle motion for hero accents. */
@@ -178,18 +249,27 @@ button:focus-visible,
   will-change: transform;
 }
 @keyframes float-soft {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-8px); }
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33%      { transform: translateY(-6px) rotate(0.5deg); }
+  66%      { transform: translateY(-3px) rotate(-0.3deg); }
 }
 
 /* Animated gradient text for hero headlines. */
 .text-gradient-flow {
-  background: linear-gradient(90deg, #22d3ee, #7c3aed, #0d9488, #22d3ee);
-  background-size: 300% 100%;
+  background: linear-gradient(
+    90deg,
+    #22d3ee 0%,
+    #7c3aed 25%,
+    #a855f7 40%,
+    #0d9488 60%,
+    #22d3ee 80%,
+    #7c3aed 100%
+  );
+  background-size: 400% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: text-flow 8s ease infinite;
+  animation: text-flow 10s ease infinite;
 }
 @keyframes text-flow {
   0%   { background-position: 0% 50%; }
@@ -197,12 +277,101 @@ button:focus-visible,
   100% { background-position: 0% 50%; }
 }
 
-/* Accessibility + battery: kill all decorative motion when requested. */
+/* =========================================================================
+   EFFECT 3: HIGH-FIDELITY NEON SHIMMER PROGRESS TRACKERS
+   Elegant glowing neon sweeping glow animation for loading states and
+   processing buttons — makes actions look alive and expensive.
+   ========================================================================= */
+.neon-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.neon-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(34, 211, 238, 0.0) 20%,
+    rgba(34, 211, 238, 0.25) 40%,
+    rgba(124, 58, 237, 0.3) 50%,
+    rgba(34, 211, 238, 0.25) 60%,
+    rgba(34, 211, 238, 0.0) 80%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: neon-sweep 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+@keyframes neon-sweep {
+  0%   { transform: translateX(-100%); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+/* Variant: slower, more subtle for background panels. */
+.neon-shimmer-slow::after {
+  animation-duration: 4s;
+}
+
+/* Neon glow border effect for active/processing states. */
+.neon-glow-border {
+  position: relative;
+}
+.neon-glow-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    rgba(34, 211, 238, 0.6),
+    rgba(124, 58, 237, 0.6),
+    rgba(13, 148, 136, 0.6),
+    rgba(34, 211, 238, 0.6)
+  );
+  background-size: 300% 100%;
+  animation: neon-border-flow 3s linear infinite;
+  z-index: -1;
+  filter: blur(3px);
+  opacity: 0.7;
+}
+
+@keyframes neon-border-flow {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+/* Pulsing neon dot indicator for live states. */
+.neon-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22d3ee;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.8), 0 0 16px rgba(34, 211, 238, 0.4);
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+@keyframes neon-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(34, 211, 238, 0.8), 0 0 16px rgba(34, 211, 238, 0.4); }
+  50%      { opacity: 0.6; box-shadow: 0 0 4px rgba(34, 211, 238, 0.4), 0 0 8px rgba(34, 211, 238, 0.2); }
+}
+
+/* =========================================================================
+   ACCESSIBILITY + PERFORMANCE SAFETY
+   ========================================================================= */
 @media (prefers-reduced-motion: reduce) {
   .mesh-backdrop,
+  .mesh-backdrop::before,
   .mesh-backdrop::after,
   .float-soft,
-  .text-gradient-flow {
+  .text-gradient-flow,
+  .neon-shimmer::after,
+  .neon-glow-border::before,
+  .neon-pulse-dot {
     animation: none !important;
   }
   .tilt-3d {
@@ -211,11 +380,19 @@ button:focus-visible,
   .tilt-3d:hover {
     transform: none;
   }
+  .glass-card::before {
+    transition: none !important;
+    transform: none !important;
+  }
 }
 
 /* Never leak the decorative 3D/animation layers into the printed CV. */
 @media print {
   .mesh-backdrop {
+    display: none !important;
+  }
+  .neon-shimmer::after,
+  .neon-glow-border::before {
     display: none !important;
   }
 }
