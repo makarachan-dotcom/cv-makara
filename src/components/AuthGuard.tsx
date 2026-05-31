@@ -13,6 +13,10 @@ type Props = {
   requireAuth?: boolean;
 };
 
+// Defensive timeout to prevent infinite loading deadlocks on production deployments
+// where DNS/DB handshakes may stall. 4 seconds is generous for a local session check.
+const SESSION_TIMEOUT_MS = 4000;
+
 export default function AuthGuard({ children, requireAuth = true }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -21,14 +25,44 @@ export default function AuthGuard({ children, requireAuth = true }: Props) {
 
   useEffect(() => {
     const ac = new AbortController();
-    fetch("/api/auth/session", { credentials: "include", signal: ac.signal })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { userId: string; role: string } | null) => {
-        if (!data) setSession({ status: "anon" });
-        else setSession({ status: "authed", userId: data.userId, role: data.role });
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const clearSession = () => {
+      ac.abort();
+      if (timeoutId) clearTimeout(timeoutId);
+      setSession({ status: "anon" });
+    };
+
+    // Defensive timeout: if the endpoint doesn't respond within the limit,
+    // abort and treat as unauthenticated to unlock the UI.
+    timeoutId = setTimeout(() => {
+      clearSession();
+    }, SESSION_TIMEOUT_MS);
+
+    // Check existing session via the auth poll endpoint with check=true,
+    // which returns the current session state without requiring a login token.
+    fetch("/api/auth/poll?check=true", { credentials: "include", signal: ac.signal })
+      .then((r) => {
+        if (!r.ok) throw new Error(`Session check failed: ${r.status}`);
+        return r.json();
       })
-      .catch(() => setSession({ status: "anon" }));
-    return () => ac.abort();
+      .then((data: { status: string; userId?: string; role?: string } | null) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (data && data.status === "ok" && data.userId && data.role) {
+          setSession({ status: "authed", userId: data.userId, role: data.role });
+        } else {
+          setSession({ status: "anon" });
+        }
+      })
+      .catch(() => {
+        if (timeoutId) clearTimeout(timeoutId);
+        setSession({ status: "anon" });
+      });
+
+    return () => {
+      ac.abort();
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
   useEffect(() => {
