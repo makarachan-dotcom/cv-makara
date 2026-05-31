@@ -35,6 +35,21 @@ const POLL_MAX_DURATION_MS = 10 * 60 * 1000; // matches LOGIN_TOKEN_TTL_MS serve
 const DASHBOARD_PATH = "/dashboard";
 
 /**
+ * Helper to safely parse JSON from a fetch response.
+ * If the response is not valid JSON (e.g., an HTML error page), returns null
+ * instead of throwing a runtime error that would kill the polling loop.
+ */
+async function safeParseJson<T>(res: Response): Promise<T | null> {
+  try {
+    const text = await res.text();
+    return JSON.parse(text) as T;
+  } catch (e) {
+    console.error("[POLL_JSON_PARSE_ERROR]", e);
+    return null;
+  }
+}
+
+/**
  * Bot deep-link login button. Clicking it:
  *   1. POSTs /api/auth/init to mint a pending LoginToken and obtain a
  *      `https://t.me/<bot>?start=login_<token>` deep link.
@@ -79,8 +94,8 @@ export function TelegramLoginButton({ buttonLabel = "ចូលប្រើជា
 
         if (!res.ok) return;
 
-        const body = (await res.json()) as PollResponse;
-        if (!stopped && "status" in body && body.status === "ok") {
+        const body = await safeParseJson<PollResponse>(res);
+        if (body && !stopped && "status" in body && body.status === "ok") {
           window.location.href = DASHBOARD_PATH;
         }
       } catch {
@@ -117,8 +132,8 @@ export function TelegramLoginButton({ buttonLabel = "ចូលប្រើជា
         headers: { "Cache-Control": "no-cache" },
       });
       if (check.ok) {
-        const body = (await check.json()) as PollResponse;
-        if ("status" in body && body.status === "ok") {
+        const body = await safeParseJson<PollResponse>(check);
+        if (body && "status" in body && body.status === "ok") {
           window.location.href = DASHBOARD_PATH;
           return;
         }
@@ -134,10 +149,12 @@ export function TelegramLoginButton({ buttonLabel = "ចូលប្រើជា
         cache: "no-store",
       });
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: { code?: string } };
-        throw new Error(body.error?.code ?? `HTTP ${res.status}`);
+        const body = await safeParseJson<{ error?: { code?: string } }>(res);
+        throw new Error(body?.error?.code ?? `HTTP ${res.status}`);
       }
-      init = (await res.json()) as InitResponse;
+      const initData = await safeParseJson<InitResponse>(res);
+      if (!initData) throw new Error("MALFORMED_INIT_RESPONSE");
+      init = initData;
     } catch (e) {
       setPhase("error");
       setErrorMessage(
@@ -178,7 +195,12 @@ export function TelegramLoginButton({ buttonLabel = "ចូលប្រើជា
           cache: "no-store",
           headers: { "Cache-Control": "no-cache" },
         });
-        const body = (await res.json()) as PollResponse;
+        
+        const body = await safeParseJson<PollResponse>(res);
+        if (!body) {
+          // If the server crashed or sent HTML, skip this tick and keep polling.
+          continue;
+        }
 
         if ("error" in body) {
           const code = body.error.code;
