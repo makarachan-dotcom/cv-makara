@@ -7,7 +7,7 @@ type SaveStatus = "idle" | "saving" | "saved" | "error";
 export function useDebouncedAutoSave<T>(data: T, endpoint = "/api/auth/save-draft", delayMs = 700) {
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
-  const acRef = useRef<AbortController null |>(null);
+  const acRef = useRef<AbortController | null>(null);
   const firstRun = useRef<boolean>(true);
 
   useEffect(() => {
