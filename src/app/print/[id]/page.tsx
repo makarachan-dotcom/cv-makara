@@ -3,6 +3,7 @@ import { resolveSessionFromCookieStore } from "@/lib/session";
 import { getDraftById } from "@/lib/drafts";
 import { CvDocument } from "@/components/cv/CvDocument";
 import { KHMER_FONT_KEYS, KhmerFontKey, fontClassFor } from "@/lib/cv-draft";
+import { normalizeCvLayout } from "@/templates/registry";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,7 +38,7 @@ export default async function PrintPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { font?: string; spacing?: string; accent?: string };
+  searchParams: { font?: string; spacing?: string; accent?: string; variant?: string };
 }) {
   const session = await resolveSessionFromCookieStore();
   if (!session) redirect(`/login?next=/print/${params.id}`);
@@ -55,6 +56,7 @@ export default async function PrintPage({
   const font = parseFont(searchParams.font);
   const spacing = parseSpacing(searchParams.spacing);
   const accent = parseAccent(searchParams.accent);
+  const variant = normalizeCvLayout(searchParams.variant);
 
   return (
     <div className="flex min-h-screen justify-center bg-white">
@@ -63,6 +65,7 @@ export default async function PrintPage({
         fontClass={fontClassFor(font)}
         lineSpacing={spacing}
         accent={accent}
+        variant={variant}
         printRoot
       />
     </div>

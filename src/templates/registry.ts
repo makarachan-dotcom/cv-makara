@@ -73,3 +73,67 @@ export function isLocked(id: string): boolean {
   const t = getTemplate(id);
   return !!t && t.access === "locked";
 }
+
+// =============================================================================
+// CV LAYOUT VARIANTS
+// -----------------------------------------------------------------------------
+// The single `standard-2d` template above is the canonical production model the
+// generation/cooldown pipeline binds to (do NOT remove it). On top of it the
+// renderer (`CvDocument`) now offers three distinct, HR-optimised *visual
+// layouts* the author can switch between live. These are pure presentation —
+// they consume the identical `MakaraCvDraft` and export identically — so adding
+// them never touches the gating, draft, or generation invariants.
+// =============================================================================
+
+export const CV_LAYOUT_IDS = ["modern-minimalist", "executive-pro", "creative-vibrant"] as const;
+export type CvLayoutId = (typeof CV_LAYOUT_IDS)[number];
+
+export const DEFAULT_CV_LAYOUT: CvLayoutId = "modern-minimalist";
+
+export interface CvLayoutMeta {
+  id: CvLayoutId;
+  /** Latin label for the picker. */
+  name: string;
+  /** Khmer label for the picker. */
+  nameKhmer: string;
+  /** One-line Khmer description of the layout's character. */
+  description: string;
+  /** Suggested accent that flatters this layout (the user can still override). */
+  suggestedAccent: string;
+}
+
+export const CV_LAYOUTS: ReadonlyArray<CvLayoutMeta> = [
+  {
+    id: "modern-minimalist",
+    name: "Modern Minimalist",
+    nameKhmer: "ទំនើប · សាមញ្ញ",
+    description: "អក្សរច្បាស់ · ខ្សែបន្ទាត់ពណ៌ខាងលើ · ចន្លោះទំនេរឆ្លាតវៃ",
+    suggestedAccent: "#0f766e",
+  },
+  {
+    id: "executive-pro",
+    name: "Executive Pro",
+    nameKhmer: "នាយកប្រតិបត្តិ",
+    description: "ប្លង់ ២ ជួរ · របារចំហៀងពណ៌ · រូបថត + ជំនាញ",
+    suggestedAccent: "#1d4ed8",
+  },
+  {
+    id: "creative-vibrant",
+    name: "Creative Vibrant",
+    nameKhmer: "ច្នៃប្រឌិត · រស់រវើក",
+    description: "បន្ទាត់ timeline · ក្បាលជំពូក gradient · ស៊ុមរូបថត",
+    suggestedAccent: "#7c3aed",
+  },
+] as const;
+
+export function getCvLayout(id: string): CvLayoutMeta | undefined {
+  return CV_LAYOUTS.find((l) => l.id === id);
+}
+
+export function isCvLayoutId(id: string | undefined | null): id is CvLayoutId {
+  return !!id && (CV_LAYOUT_IDS as ReadonlyArray<string>).includes(id);
+}
+
+export function normalizeCvLayout(id: string | undefined | null): CvLayoutId {
+  return isCvLayoutId(id) ? id : DEFAULT_CV_LAYOUT;
+}

@@ -48,6 +48,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`dark ${kantumruy.variable} ${hanuman.variable} ${nokora.variable} ${siemreap.variable}`}
     >
       <body className="min-h-screen bg-ink-950 font-sans text-ink-100 antialiased">
+        {/* Pure-CSS animated mesh-gradient backdrop (no WebGL). Fixed, behind
+            all content, hidden in print. Provides the "living" premium feel. */}
+        <div className="mesh-backdrop" aria-hidden />
         {children}
       </body>
     </html>

@@ -87,7 +87,7 @@ export default async function DashboardPage() {
       </header>
 
       <section className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="rounded-xl border border-ink-700 bg-ink-900 p-5">
+        <div className="tilt-3d glass-card rounded-xl border border-ink-700 p-5">
           <p className="text-xs uppercase tracking-widest text-ink-200">Generations</p>
           <p className="mt-2 text-3xl font-semibold">
             {admin ? (
@@ -101,7 +101,7 @@ export default async function DashboardPage() {
           </p>
           <p className="mt-3 text-sm">{admin ? "No rate limit" : `${remaining} remaining`}</p>
         </div>
-        <div className="rounded-xl border border-ink-700 bg-ink-900 p-5">
+        <div className="tilt-3d glass-card rounded-xl border border-ink-700 p-5">
           <p className="text-xs uppercase tracking-widest text-ink-200">Streak</p>
           <p className="mt-2 text-3xl font-semibold">
             {data.streak?.currentCount ?? 0}<span className="text-ink-200">/7</span>
@@ -115,12 +115,12 @@ export default async function DashboardPage() {
             </button>
           </form>
         </div>
-        <div className="rounded-xl border border-ink-700 bg-ink-900 p-5">
+        <div className="tilt-3d glass-card rounded-xl border border-ink-700 p-5">
           <p className="text-xs uppercase tracking-widest text-ink-200">CV model</p>
           <p className="mt-2 text-3xl font-semibold">
             2D<span className="text-ink-200"> · A4</span>
           </p>
-          <p className="mt-1 text-xs text-ink-200">Standard résumé · always available</p>
+          <p className="mt-1 text-xs text-ink-200">3 layouts · always available</p>
         </div>
       </section>
 

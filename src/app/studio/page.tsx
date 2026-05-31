@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { CvDocument } from "@/components/cv/CvDocument";
 import { ExportSelector } from "@/components/export/ExportSelector";
+import { LayoutPicker } from "@/components/cv/LayoutPicker";
 import { KhmerInterviewer } from "@/components/interview/KhmerInterviewer";
+import { DEFAULT_CV_LAYOUT, type CvLayoutId } from "@/templates/registry";
 import {
   EMPTY_DRAFT,
   KHMER_FONTS,
@@ -23,6 +25,7 @@ export default function StudioPage() {
   const [font, setFont] = useState<KhmerFontKey>("kantumruy");
   const [lineSpacing, setLineSpacing] = useState(1.7);
   const [accent, setAccent] = useState("#0f766e");
+  const [layout, setLayout] = useState<CvLayoutId>(DEFAULT_CV_LAYOUT);
   const cvRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -49,6 +52,9 @@ export default function StudioPage() {
             <KhmerInterviewer onComplete={(d) => setDraft(d)} />
           ) : (
             <>
+              {/* Layout selector — the three high-fidelity CV layouts. */}
+              <LayoutPicker value={layout} onChange={setLayout} />
+
               {/* Typography + appearance controls */}
               <section className="space-y-3">
                 <h3 className="text-[11px] font-semibold uppercase tracking-widest text-ink-200">
@@ -110,7 +116,7 @@ export default function StudioPage() {
               <ExportSelector
                 draft={draft}
                 nodeRef={cvRef}
-                serverPdf={{ font, spacing: lineSpacing, accent }}
+                serverPdf={{ font, spacing: lineSpacing, accent, variant: layout }}
               />
 
               <button
@@ -138,6 +144,7 @@ export default function StudioPage() {
                   fontClass={fontClassFor(font)}
                   lineSpacing={lineSpacing}
                   accent={accent}
+                  variant={layout}
                   printRoot
                 />
               </div>

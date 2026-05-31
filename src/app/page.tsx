@@ -10,7 +10,7 @@ export default function HomePage() {
           Makara CV · Khmer Resume Studio
         </p>
         <h1 className="mt-3 text-4xl font-semibold leading-tight">
-          A focused 2D résumé studio, built for Khmer.
+          <span className="text-gradient-flow">A focused 2D résumé studio, built for Khmer.</span>
           <br />
           <span className="text-ink-200">Telegram-secured. AI-interviewed. ATS-ready.</span>
         </h1>
@@ -42,13 +42,14 @@ export default function HomePage() {
         </div>
       </header>
 
-      <section className="rounded-xl border border-accent-cyan/40 bg-accent-cyan/5 p-6">
+      <section className="tilt-3d glass-card rounded-xl border border-accent-cyan/40 p-6">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-accent-cyan">
-          Standard 2D résumé
+          Three high-fidelity résumé layouts
         </h2>
         <p className="mt-2 max-w-2xl text-sm text-ink-200">
-          One clean, ATS-friendly A4 model with a live Khmer-safe preview. No heavy 3D scenes —
-          just a fast, focused authoring flow with a real-time document preview.
+          Clean, ATS-friendly A4 models — Modern Minimalist, Executive Pro and Creative Vibrant —
+          each with a live, Khmer-safe phone preview. No heavy 3D scenes: just a fast, focused
+          authoring flow with a real-time document preview and one-tap layout switching.
         </p>
         <Link
           href={`/templates/${STANDARD_TEMPLATE_ID}`}
@@ -58,7 +59,7 @@ export default function HomePage() {
         </Link>
       </section>
 
-      <section className="mt-16 rounded-xl border border-ink-700 bg-ink-900 p-8">
+      <section className="mt-16 tilt-3d glass-card rounded-xl border border-ink-700 p-8">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-accent-cyan">
           Need to talk to an admin?
         </h2>

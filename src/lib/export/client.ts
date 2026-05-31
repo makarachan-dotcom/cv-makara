@@ -66,6 +66,7 @@ export interface ServerPdfOptions {
   spacing?: number;
   accent?: string;
   draftId?: string;
+  variant?: string;
 }
 
 export async function exportServerPdf(opts: ServerPdfOptions, fullName: string): Promise<void> {
