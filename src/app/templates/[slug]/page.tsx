@@ -6,7 +6,13 @@ import { TemplateWorkspace } from "./TemplateWorkspace";
 
 export const dynamic = "force-dynamic";
 
-export default async function TemplatePage({ params }: { params: { slug: string } }) {
+export default async function TemplatePage({ 
+  params,
+  searchParams,
+}: { 
+  params: { slug: string };
+  searchParams: { historyId?: string };
+}) {
   const session = await resolveSessionFromCookieStore();
   if (!session) redirect(`/login?next=/templates/${params.slug}`);
 
@@ -43,6 +49,25 @@ export default async function TemplatePage({ params }: { params: { slug: string 
         .padStart(2, "0")}-${streak.lastCheckInDate.getUTCDate().toString().padStart(2, "0")}`
     : null;
 
+  let initialHistory = null;
+  if (searchParams.historyId) {
+    try {
+      const history = await prisma.cVHistory.findUnique({
+        where: { id: BigInt(searchParams.historyId) },
+      });
+      if (history && history.userId === session.userId) {
+        initialHistory = {
+          id: history.id.toString(),
+          payload: history.payload as any,
+          industry: history.industry as any,
+          styling: history.styling as any,
+        };
+      }
+    } catch (err) {
+      console.error("[template] history fetch failed:", err);
+    }
+  }
+
   return (
     <TemplateWorkspace
       template={template}
@@ -53,6 +78,7 @@ export default async function TemplatePage({ params }: { params: { slug: string 
         today: todayKey,
         lastCheckInDate: lastKey,
       }}
+      initialHistory={initialHistory}
     />
   );
 }

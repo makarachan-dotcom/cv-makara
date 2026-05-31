@@ -66,6 +66,7 @@ export interface ServerPdfOptions {
   spacing?: number;
   accent?: string;
   draftId?: string;
+  historyId?: string;
   variant?: string;
 }
 

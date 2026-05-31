@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma, withUserContext } from "@/lib/db";
 import { resolveSessionFromCookieStore } from "@/lib/session";
 import { redirect } from "next/navigation";
+import { HistoryItem } from "@/components/history/HistoryItem";
 
 export const dynamic = "force-dynamic";
 
@@ -9,17 +10,11 @@ export default async function HistoryPage() {
   const session = await resolveSessionFromCookieStore();
   if (!session) redirect("/login?next=/history");
 
-  const generations = await withUserContext(session.userId, async (tx) => {
-    return tx.generation.findMany({
+  const history = await withUserContext(session.userId, async (tx) => {
+    return tx.cVHistory.findMany({
       where: { userId: session.userId },
-      orderBy: { generatedAt: "desc" },
+      orderBy: { updatedAt: "desc" },
       take: 50,
-      select: {
-        id: true,
-        templateId: true,
-        generatedAt: true,
-        cv: { select: { id: true, createdAt: true } },
-      },
     });
   });
 
@@ -40,7 +35,7 @@ export default async function HistoryPage() {
         </Link>
       </header>
 
-      {generations.length === 0 ? (
+      {history.length === 0 ? (
         <div className="mt-12 rounded-xl border border-ink-700 bg-ink-900/70 p-8 text-center">
           <p className="text-ink-200">មិនទាន់មានប្រវត្តិបង្កើត CV ទេ។</p>
           <p className="mt-2 text-sm text-ink-500">
@@ -54,28 +49,18 @@ export default async function HistoryPage() {
           </Link>
         </div>
       ) : (
-        <div className="mt-8 space-y-3">
-          {generations.map((gen) => (
-            <div
-              key={gen.id.toString()}
-              className="glass-card tilt-3d flex items-center justify-between rounded-xl border border-ink-700 p-4"
-            >
-              <div>
-                <p className="text-sm font-semibold text-ink-100">
-                  CV #{gen.cv?.id?.toString() ?? "—"}
-                </p>
-                <p className="mt-0.5 text-xs text-ink-200">
-                  Template: {gen.templateId} · Generated:{" "}
-                  {new Date(gen.generatedAt).toLocaleString("km-KH", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
-                </p>
-              </div>
-              <span className="rounded-full bg-accent-cyan/15 px-3 py-1 text-[10px] uppercase tracking-wider text-accent-cyan">
-                #{gen.id.toString().slice(-6)}
-              </span>
-            </div>
+        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+          {history.map((item) => (
+            <HistoryItem
+              key={item.id.toString()}
+              item={{
+                ...item,
+                id: item.id.toString(),
+                createdAt: item.createdAt.toISOString(),
+                styling: item.styling as any,
+                payload: item.payload as any,
+              }}
+            />
           ))}
         </div>
       )}

@@ -26,6 +26,17 @@ interface Props {
     today: string;
     lastCheckInDate: string | null;
   };
+  initialHistory?: {
+    id: string;
+    payload: MakaraCvDraft;
+    industry: IndustryId;
+    styling: {
+      font?: KhmerFontKey;
+      spacing?: number;
+      accent?: string;
+      variant?: CvLayoutId;
+    };
+  } | null;
 }
 
 // Minimal demo CV used as the body for the "Deploy to Web" generation request.
@@ -97,25 +108,25 @@ async function safeParseJson<T>(res: Response): Promise<T | null> {
   }
 }
 
-export function TemplateWorkspace({ template, unlocked, streak }: Props) {
+export function TemplateWorkspace({ template, unlocked, streak, initialHistory }: Props) {
   const [showLockedModal, setShowLockedModal] = useState(false);
   const [deploying, setDeploying] = useState(false);
   const [deployResult, setDeployResult] = useState<string | null>(null);
 
   // ---- Live 2D document state (drives the real-time A4 preview) ------------
-  const [liveDraft, setLiveDraft] = useState<MakaraCvDraft>(() => ({
-    ...structuredClone(EMPTY_DRAFT),
-  }));
-  const [font, setFont] = useState<KhmerFontKey>("kantumruy");
-  const [lineSpacing, setLineSpacing] = useState(1.7);
-  const [accent, setAccent] = useState("#0f766e");
-  const [layout, setLayout] = useState<CvLayoutId>(DEFAULT_CV_LAYOUT);
+  const [liveDraft, setLiveDraft] = useState<MakaraCvDraft>(() => 
+    initialHistory ? initialHistory.payload : { ...structuredClone(EMPTY_DRAFT) }
+  );
+  const [font, setFont] = useState<KhmerFontKey>(initialHistory?.styling?.font || "kantumruy");
+  const [lineSpacing, setLineSpacing] = useState(initialHistory?.styling?.spacing || 1.7);
+  const [accent, setAccent] = useState(initialHistory?.styling?.accent || "#0f766e");
+  const [layout, setLayout] = useState<CvLayoutId>(initialHistory?.styling?.variant || DEFAULT_CV_LAYOUT);
 
   // ---- Stepper lifecycle (re-hydratable for the "Rewrite" path) ------------
-  const [phase, setPhase] = useState<FormPhase>("editing");
+  const [phase, setPhase] = useState<FormPhase>(initialHistory ? "saved" : "editing");
   const [interviewerKey, setInterviewerKey] = useState(0);
-  const [savedDraft, setSavedDraft] = useState<MakaraCvDraft | null>(null);
-  const [savedIndustry, setSavedIndustry] = useState<IndustryId | null>(null);
+  const [savedDraft, setSavedDraft] = useState<MakaraCvDraft | null>(initialHistory?.payload || null);
+  const [savedIndustry, setSavedIndustry] = useState<IndustryId | null>(initialHistory?.industry || null);
 
   // ---- Mobile preview popup modal (slide-up overlay) -----------------------
   const [mobileMounted, setMobileMounted] = useState(false);

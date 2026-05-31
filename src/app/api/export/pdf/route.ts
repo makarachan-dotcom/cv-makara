@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { prisma } from "@/lib/db";
 import { resolveSessionFromCookieStore, SESSION_COOKIE_NAME } from "@/lib/session";
 import { getActiveDraft, getDraftById } from "@/lib/drafts";
 import { KHMER_FONT_KEYS, KhmerFontKey } from "@/lib/cv-draft";
@@ -13,6 +14,7 @@ export const maxDuration = 60;
 
 const BodySchema = z.object({
   draftId: z.string().regex(/^\d+$/).optional(),
+  historyId: z.string().regex(/^\d+$/).optional(),
   font: z.enum(KHMER_FONT_KEYS as unknown as [KhmerFontKey, ...KhmerFontKey[]]).optional(),
   spacing: z.number().min(1.4).max(2.4).optional(),
   accent: z
@@ -84,12 +86,28 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Resolve which draft to render and confirm the caller owns it.
-    const draft = parsed.data.draftId
-      ? await getDraftById(session.userId, BigInt(parsed.data.draftId))
-      : await getActiveDraft(session.userId);
-    if (!draft) {
-      return fail("DRAFT_NOT_FOUND", "No draft to export. Run the AI consultation first.", 404);
+    // Resolve the document data to render.
+    let draftData: any = null;
+    let documentId: string = "";
+
+    if (parsed.data.historyId) {
+      const history = await prisma.cVHistory.findUnique({
+        where: { id: BigInt(parsed.data.historyId) },
+      });
+      if (!history || history.userId !== session.userId) {
+        return fail("HISTORY_NOT_FOUND", "History entry not found or unauthorized.", 404);
+      }
+      draftData = history.payload;
+      documentId = `history-${history.id}`;
+    } else {
+      const draft = parsed.data.draftId
+        ? await getDraftById(session.userId, BigInt(parsed.data.draftId))
+        : await getActiveDraft(session.userId);
+      if (!draft) {
+        return fail("DRAFT_NOT_FOUND", "No draft to export. Run the AI consultation first.", 404);
+      }
+      draftData = draft.data;
+      documentId = draft.id.toString();
     }
 
     // Forward the signed session cookie so the print route authenticates as us.
@@ -104,7 +122,9 @@ export async function POST(req: NextRequest) {
     if (parsed.data.accent) query.set("accent", parsed.data.accent);
     if (parsed.data.variant) query.set("variant", parsed.data.variant);
     const qs = query.toString();
-    const printPath = `/print/${draft.id}${qs ? `?${qs}` : ""}`;
+    const printPath = parsed.data.historyId 
+      ? `/print/history/${parsed.data.historyId}${qs ? `?${qs}` : ""}`
+      : `/print/${documentId}${qs ? `?${qs}` : ""}`;
 
     const origin = resolvePublicOrigin(req);
 
@@ -115,7 +135,7 @@ export async function POST(req: NextRequest) {
         cookie: { name: SESSION_COOKIE_NAME, value: cookieValue },
       });
 
-      const filename = `${slugify(draft.data.fullName)}.pdf`;
+      const filename = `${slugify(draftData.fullName || "cv")}.pdf`;
       return new NextResponse(new Blob([new Uint8Array(pdf)], { type: "application/pdf" }), {
         status: 200,
         headers: {
