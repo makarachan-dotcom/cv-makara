@@ -9,11 +9,9 @@ export default function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 py-16 text-center">
-      <h1 className="text-2xl font-semibold">Sign in</h1>
-      <p className="mt-3 max-w-sm text-sm text-ink-200">
-        We authenticate via the Chrono CV Telegram bot. Click the button below — Telegram
-        opens in a new tab, you tap <strong>Start</strong>, and we sign you in automatically.
-        No passwords, no third-party OAuth providers.
+      <h1 className="text-2xl font-semibold leading-khmer">ចុះឈ្មោះចូលប្រើប្រាស់</h1>
+      <p className="mt-3 max-w-sm text-sm leading-khmer text-ink-200">
+        យើងខ្ញុំផ្ទៀងផ្ទាត់គណនីតាមរយៈ Chrono CV Telegram bot ដោយស្វ័យប្រវត្ត។ ចុចប៊ូតុងខាងក្រោម — កម្មវិធី Telegram នឹងបើកក្នុង tab ថ្មី បន្ទាប់មកចុច <strong>Start</strong> ហើយប្រព័ន្ធនឹងនាំអ្នកចូលដោយស្វ័យប្រវត្ត។ មិនត្រូវការលេខសម្ងាត់ ឬគណនីផ្សេងៗឡើយ។
       </p>
       <div className="mt-8 w-full">
         {botConfigured ? (

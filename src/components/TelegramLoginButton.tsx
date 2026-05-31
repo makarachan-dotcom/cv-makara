@@ -42,7 +42,7 @@ const POLL_MAX_DURATION_MS = 10 * 60 * 1000; // matches LOGIN_TOKEN_TTL_MS serve
  *      at which point the server upserts the user, sets the session cookie,
  *      and the browser navigates to the `next` query param (default /dashboard).
  */
-export function TelegramLoginButton({ buttonLabel = "Sign in with Telegram" }: Props) {
+export function TelegramLoginButton({ buttonLabel = "ចូលប្រើជាមួយ Telegram" }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [deepLink, setDeepLink] = useState<string | null>(null);
@@ -144,7 +144,8 @@ export function TelegramLoginButton({ buttonLabel = "Sign in with Telegram" }: P
         setPhase("success");
         const next =
           new URLSearchParams(window.location.search).get("next") ?? "/dashboard";
-        window.location.assign(next);
+        // Forceful hard browser redirect to bypass any blocking loops
+        window.location.replace(next);
         return;
       }
     }
@@ -171,35 +172,34 @@ export function TelegramLoginButton({ buttonLabel = "Sign in with Telegram" }: P
       ) : null}
 
       {phase === "starting" ? (
-        <div className="neon-shimmer rounded-lg bg-white/5 px-4 py-3 text-sm text-ink-200">
+        <div className="neon-shimmer rounded-lg bg-white/5 px-4 py-3 text-sm leading-khmer text-ink-200">
           <span className="inline-flex items-center gap-2">
             <span className="neon-pulse-dot" />
-            Preparing your Telegram login link…
+            កំពុងរៀបចំតំណភ្ជាប់ Telegram សម្រាប់អ្នក…
           </span>
         </div>
       ) : null}
 
       {phase === "waiting" && deepLink ? (
-        <div className="neon-shimmer-slow glass-card flex flex-col gap-3 rounded-lg px-4 py-4 text-sm text-ink-200">
+        <div className="neon-shimmer-slow glass-card flex flex-col gap-3 rounded-lg px-4 py-4 text-sm leading-khmer text-ink-200">
           <p className="font-medium text-white">
             <span className="inline-flex items-center gap-2">
               <span className="neon-pulse-dot" />
-              Waiting for confirmation in Telegram…
+              កំពុងរង់ចាំការបញ្ជាក់ពីកម្មវិធី Telegram…
             </span>
           </p>
-          <p className="text-xs leading-relaxed text-ink-200/80">
-            A new tab opened to Telegram. Tap <strong>Start</strong> in the bot chat.
-            This page will sign you in automatically as soon as the bot confirms.
+          <p className="text-xs leading-khmer text-ink-200/80">
+            Tab ថ្មីមួយត្រូវបានបើកទៅកាន់ Telegram។ សូមចុច <strong>Start</strong> ក្នុង bot chat។ ទំព័រនេះនឹងនាំអ្នកចូលដោយស្វ័យប្រវត្ត នៅពេលដែល bot បញ្ជាក់រួចរាល់។
           </p>
-          <p className="text-xs leading-relaxed text-ink-200/80">
-            Tab didn&apos;t open?{" "}
+          <p className="text-xs leading-khmer text-ink-200/80">
+            មិនឃើញ tab បើកមែនទេ?{" "}
             <a
               href={deepLink}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#5fb8e6] underline"
             >
-              Open Telegram manually
+              បើក Telegram ដោយផ្ទាល់
             </a>
             .
           </p>
@@ -208,14 +208,14 @@ export function TelegramLoginButton({ buttonLabel = "Sign in with Telegram" }: P
             onClick={cancel}
             className="self-start text-xs uppercase tracking-widest text-ink-200/60 hover:text-white"
           >
-            Cancel
+            បោះបង់ / CANCEL
           </button>
         </div>
       ) : null}
 
       {phase === "success" ? (
-        <div className="rounded-lg bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
-          Signed in. Redirecting…
+        <div className="rounded-lg bg-emerald-500/10 px-4 py-3 text-sm leading-khmer text-emerald-300">
+          បានចូលប្រើប្រាស់រួចរាល់។ កំពុងបញ្ជូនបន្ត…
         </div>
       ) : null}
 
