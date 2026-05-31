@@ -5,8 +5,9 @@ export const dynamic = "force-dynamic";
 
 export default async function LoginPage() {
   const session = await resolveSessionFromCookieStore();
+  const botUsername = process.env.TELEGRAM_BOT_USERNAME ?? "";
   const botConfigured = Boolean(
-    process.env.TELEGRAM_BOT_USERNAME && process.env.TELEGRAM_BOT_TOKEN,
+    botUsername && process.env.TELEGRAM_BOT_TOKEN,
   );
 
   return (
@@ -19,7 +20,7 @@ export default async function LoginPage() {
         
         <div className="mt-8 w-full">
           {botConfigured ? (
-            <TelegramLoginButton botUsername={process.env.TELEGRAM_BOT_USERNAME!} />
+            <TelegramLoginButton botUsername={botUsername} />
           ) : (
             <div className="rounded-xl border border-accent-rose/50 bg-accent-rose/10 p-4 text-left text-sm text-accent-rose">
               <p className="font-mono text-xs uppercase tracking-widest">Configuration error</p>
