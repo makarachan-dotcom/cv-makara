@@ -1,87 +1,47 @@
-import { NextRequest, NextResponse } from "next/server";
-import { SESSION_COOKIE_NAME } from "@/lib/session-cookie-name";
+import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS: ReadonlyArray<string | RegExp> = [
-  "/",
-  "/login",
-  "/legacy",
-  // The 2D Khmer authoring studio + its stateless interview API are open: they
-  // touch no protected data. The gated actions (3D generation / deploy) still
-  // require a Telegram session at the API layer.
-  "/studio",
-  /^\/api\/interview$/,
-  /^\/api\/auth\/telegram(\/.*)?$/,
-  /^\/api\/auth\/init$/,
-  /^\/api\/auth\/poll$/,
-  /^\/api\/auth\/logout$/,
-  /^\/api\/admin-link$/,
-  /^\/api\/health$/,
-  /^\/api\/telegram\/webhook$/,
-  /^\/_next\//,
-  /^\/favicon\.ico$/,
-  /^\/public\//,
-];
+const PUBLIC_PATHS = new Set<string>(["/", "/login", "/auth/telegram", "/api/auth/telegram"]);
+const PROTECTED_PREFIXES = ["/workspace", "/dashboard", "/cv", "/account"];
 
 function isPublic(pathname: string): boolean {
-  return PUBLIC_PATHS.some((p) =>
-    typeof p === "string" ? p === pathname : p.test(pathname),
-  );
+  if (PUBLIC_PATHS.has(pathname)) return true;
+  if (pathname.startsWith("/_next")) return true;
+  if (pathname.startsWith("/api/auth")) return true;
+  if (pathname.startsWith("/static")) return true;
+  if (/\.(png|jpg|jpeg|svg|webp|ico|css|js|map|woff2?)$/i.test(pathname)) return true;
+  return false;
 }
 
-/**
- * Strict interceptor that cuts off unauthenticated attempts immediately with a
- * deterministic JSON security exception (for API routes) or a 302 redirect to
- * /login (for HTML routes).
- *
- * NOTE: middleware only enforces the *presence* of a signed cookie. Full
- * cryptographic + DB lookup happens in `resolveSessionFromCookieStore()` inside
- * server components / route handlers, which can use Node-only APIs.
- */
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+function isProtected(pathname: string): boolean {
+  return PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
 
+export function middleware(req: NextRequest): NextResponse {
+  const { pathname, search } = req.nextUrl;
+  const token = req.cookies.get("makara_session")?.value ?? null;
+  const isAuthed = Boolean(token);
+
+  // Never redirect static or already-public assets — kills the bounce loop.
   if (isPublic(pathname)) {
-    // If user has a valid session and is visiting /login, auto-redirect to dashboard
-    if (pathname === "/login") {
-      const cookie = req.cookies.get(SESSION_COOKIE_NAME)?.value;
-      if (cookie && cookie.includes(".")) {
-        const dashboard = req.nextUrl.clone();
-        dashboard.pathname = "/dashboard";
-        return NextResponse.redirect(dashboard);
-      }
+    // Authed user visiting /login → send them home ONCE (no recursion).
+    if (isAuthed && (pathname === "/login" || pathname === "/")) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/workspace";
+      url.search = "";
+      return NextResponse.redirect(url);
     }
     return NextResponse.next();
   }
 
-  const cookie = req.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (cookie && cookie.includes(".")) {
-    return NextResponse.next();
+  // Protected route, no session → bounce to /login with return-to.
+  if (isProtected(pathname) && !isAuthed) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = `?next=${encodeURIComponent(pathname + search)}`;
+    return NextResponse.redirect(url);
   }
 
-  if (pathname.startsWith("/api/")) {
-    return new NextResponse(
-      JSON.stringify({
-        error: {
-          code: "AUTH_REQUIRED",
-          message: "Authentication required. Sign in via Telegram to obtain a session.",
-          path: pathname,
-          timestamp: new Date().toISOString(),
-        },
-      }),
-      {
-        status: 401,
-        headers: {
-          "content-type": "application/json; charset=utf-8",
-          "cache-control": "no-store",
-        },
-      },
-    );
-  }
-
-  const redirect = req.nextUrl.clone();
-  redirect.pathname = "/login";
-  redirect.searchParams.set("next", pathname);
-  return NextResponse.redirect(redirect);
+  return NextResponse.next();
 }
 
 export const config = {
