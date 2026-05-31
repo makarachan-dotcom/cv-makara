@@ -30,7 +30,7 @@ function deriveSignals(industryId: IndustryId, draft: MakaraCvDraft): Signals {
   const industry = getIndustry(industryId) ?? getIndustry("other")!;
   const role = draft.headline.trim() || draft.experience[0]?.role?.trim() || "តួនាទីនេះ";
   const yearsMatch = draft.summary.match(/(\d+)\s*ឆ្នាំ/);
-  const years = yearsMatch ? yearsMatch[1] : "";
+  const years = yearsMatch?.[1] ?? "";
   const topSkills = draft.skills.map((s) => s.trim()).filter(Boolean).slice(0, 3);
   const skillsLabel = topSkills.length > 0 ? topSkills.join(", ") : "ជំនាញស្នូលរបស់ខ្ញុំ";
   const company = draft.experience[0]?.company?.trim() ?? "";

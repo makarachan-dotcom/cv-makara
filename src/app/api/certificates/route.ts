@@ -113,8 +113,10 @@ export async function POST(req: NextRequest) {
       415,
     );
   }
-  const mimeType = match[1];
-  const base64Body = match[2];
+  // DATA_URL_RE has two capture groups, so a successful match guarantees both
+  // are present (non-null assertions satisfy noUncheckedIndexedAccess).
+  const mimeType = match[1]!;
+  const base64Body = match[2]!;
 
   if (decodedByteLength(base64Body) > MAX_DECODED_BYTES) {
     return fail("PAYLOAD_TOO_LARGE", "Credential exceeds the 6 MB limit.", 413);
