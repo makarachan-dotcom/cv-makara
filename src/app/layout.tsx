@@ -36,9 +36,9 @@ const siemreap = Siemreap({
 });
 
 export const metadata: Metadata = {
-  title: "Makara CV — Cinematic 3D Khmer Resume Studio",
+  title: "Makara CV — Khmer 2D Resume Studio",
   description:
-    "Build a pixel-perfect Khmer CV inside a cinematic 3D studio. Telegram-secured. AI Khmer career interviewer, 20 WebGL templates, multi-format export (PDF / PNG / ATS).",
+    "Build a pixel-perfect Khmer CV with a live 2D A4 preview. Telegram-secured. AI Khmer career interviewer, ATS-friendly, multi-format export (PDF / PNG / ATS).",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

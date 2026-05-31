@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { HoldToReveal } from "@/components/HoldToReveal";
-import { TEMPLATES } from "@/templates/registry";
+import { STANDARD_TEMPLATE_ID } from "@/templates/registry";
 
 export default function HomePage() {
-  const free = TEMPLATES.filter((t) => t.access === "free");
-  const locked = TEMPLATES.filter((t) => t.access === "locked");
   return (
     <main className="mx-auto max-w-5xl px-6 py-16">
       <header className="mb-12">
@@ -12,15 +10,14 @@ export default function HomePage() {
           Makara CV · Khmer Resume Studio
         </p>
         <h1 className="mt-3 text-4xl font-semibold leading-tight">
-          A cinematic 3D CV studio, built for Khmer.
+          A focused 2D résumé studio, built for Khmer.
           <br />
-          <span className="text-ink-200">Telegram-secured. AI-interviewed. Streak-unlocked.</span>
+          <span className="text-ink-200">Telegram-secured. AI-interviewed. ATS-ready.</span>
         </h1>
         <p className="mt-4 max-w-2xl text-ink-200">
           An AI career consultant interviews you <strong>in Khmer</strong> to surface real metrics,
           then renders a pixel-perfect A4 CV with professional Khmer Unicode fonts (Kantumruy Pro,
-          Hanuman, Nokora, Siemreap) — clip-free, and exportable to PDF, PNG and ATS. Two WebGL
-          templates are free; the other {locked.length} unlock after a 7-day check-in streak. Each
+          Hanuman, Nokora, Siemreap) — clip-free, and exportable to PDF, PNG and ATS. Each
           verified user gets <strong>2 generations per 7 days</strong>, enforced server-side.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -45,37 +42,20 @@ export default function HomePage() {
         </div>
       </header>
 
-      <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="rounded-xl border border-ink-700 bg-ink-900 p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-accent-cyan">
-            Free templates ({free.length})
-          </h2>
-          <ul className="mt-3 space-y-2">
-            {free.map((t) => (
-              <li key={t.id} className="flex items-center justify-between text-sm">
-                <span>{t.name}</span>
-                <Link href={`/templates/${t.id}`} className="text-accent-cyan hover:underline">
-                  open →
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="rounded-xl border border-ink-700 bg-ink-900 p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-accent-gold">
-            Locked templates ({locked.length})
-          </h2>
-          <ul className="mt-3 grid grid-cols-1 gap-1 text-sm">
-            {locked.map((t) => (
-              <li key={t.id} className="flex items-center justify-between text-ink-200">
-                <span>{t.name}</span>
-                <span className="font-mono text-[10px] uppercase tracking-widest text-accent-gold">
-                  7-day streak
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+      <section className="rounded-xl border border-accent-cyan/40 bg-accent-cyan/5 p-6">
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-accent-cyan">
+          Standard 2D résumé
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-ink-200">
+          One clean, ATS-friendly A4 model with a live Khmer-safe preview. No heavy 3D scenes —
+          just a fast, focused authoring flow with a real-time document preview.
+        </p>
+        <Link
+          href={`/templates/${STANDARD_TEMPLATE_ID}`}
+          className="mt-4 inline-flex rounded-full bg-accent-cyan px-5 py-2.5 text-sm font-semibold text-ink-950 transition hover:bg-accent-cyan/90"
+        >
+          បង្កើត CV ថ្មី / Create New CV →
+        </Link>
       </section>
 
       <section className="mt-16 rounded-xl border border-ink-700 bg-ink-900 p-8">

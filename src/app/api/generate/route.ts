@@ -6,7 +6,7 @@ import { CVInputSchema } from "@/types/cv";
 import { evaluateCooldown, GENERATIONS_PER_WINDOW, ROLLING_WINDOW_HOURS } from "@/lib/cooldown";
 import { acquireLock } from "@/lib/lock";
 import { findActiveDraftId } from "@/lib/drafts";
-import { getTemplate, isLocked } from "@/templates/registry";
+import { getTemplate, isLocked, STANDARD_TEMPLATE_ID } from "@/templates/registry";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
-  const templateId = searchParams.get("template") ?? "voxel-office";
+  const templateId = searchParams.get("template") ?? STANDARD_TEMPLATE_ID;
   const template = getTemplate(templateId);
   if (!template) {
     return error("TEMPLATE_UNKNOWN", `Template ${templateId} is not registered.`, 400);

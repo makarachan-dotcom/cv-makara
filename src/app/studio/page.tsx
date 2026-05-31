@@ -14,7 +14,7 @@ import {
 } from "@/lib/cv-draft";
 
 // =============================================================================
-// /studio — the 2D CV authoring surface that sits inside the 3D platform.
+// /studio — the 2D CV authoring surface.
 // AI Khmer interview → live A4 document → typography controls → multi-export.
 // =============================================================================
 

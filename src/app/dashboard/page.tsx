@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma, withUserContext } from "@/lib/db";
 import { resolveSessionFromCookieStore } from "@/lib/session";
 import { redirect } from "next/navigation";
-import { TEMPLATES } from "@/templates/registry";
+import { STANDARD_TEMPLATE_ID } from "@/templates/registry";
 import { ROLLING_WINDOW_HOURS, GENERATIONS_PER_WINDOW } from "@/lib/cooldown";
 
 export const dynamic = "force-dynamic";
@@ -28,12 +28,6 @@ export default async function DashboardPage() {
     const streak = await tx.streak.findUnique({ where: { userId: session.userId } });
     return { user, generations, streak };
   });
-
-  const unlocks = await prisma.templateUnlock.findMany({
-    where: { userId: session.userId },
-    select: { templateId: true },
-  });
-  const unlocked = new Set(unlocks.map((u) => u.templateId));
 
   // Platform-wide analytics — admin-only system administration view.
   const analytics = admin
@@ -122,15 +116,11 @@ export default async function DashboardPage() {
           </form>
         </div>
         <div className="rounded-xl border border-ink-700 bg-ink-900 p-5">
-          <p className="text-xs uppercase tracking-widest text-ink-200">Unlocked premium</p>
+          <p className="text-xs uppercase tracking-widest text-ink-200">CV model</p>
           <p className="mt-2 text-3xl font-semibold">
-            {admin ? 18 : unlocked.size}<span className="text-ink-200">/18</span>
+            2D<span className="text-ink-200"> · A4</span>
           </p>
-          <p className="mt-1 text-xs text-ink-200">
-            {admin
-              ? "All premium templates unlocked"
-              : "Complete a 7-day streak to unlock all."}
-          </p>
+          <p className="mt-1 text-xs text-ink-200">Standard résumé · always available</p>
         </div>
       </section>
 
@@ -165,40 +155,24 @@ export default async function DashboardPage() {
 
       <section className="mt-10">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-accent-cyan">
-          Templates
+          Create
         </h2>
-        <ul className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {TEMPLATES.map((t) => {
-            const isFree = t.access === "free";
-            const isUnlocked = isFree || unlocked.has(t.id) || admin;
-            return (
-              <li key={t.id} className="rounded-xl border border-ink-700 bg-ink-900 p-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">{t.name}</h3>
-                  <span
-                    className={
-                      "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest " +
-                      (isUnlocked
-                        ? "bg-accent-cyan/15 text-accent-cyan"
-                        : "bg-accent-gold/15 text-accent-gold")
-                    }
-                  >
-                    {isUnlocked ? "unlocked" : "locked"}
-                  </span>
-                </div>
-                <p className="mt-2 text-xs text-ink-200 line-clamp-2">{t.description}</p>
-                <div className="mt-3">
-                  <Link
-                    href={`/templates/${t.id}`}
-                    className="text-xs text-accent-cyan hover:underline"
-                  >
-                    open →
-                  </Link>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <Link
+          href={`/templates/${STANDARD_TEMPLATE_ID}`}
+          className="mt-3 flex flex-col items-start gap-4 rounded-2xl border border-accent-cyan/40 bg-accent-cyan/5 p-6 transition hover:border-accent-cyan hover:bg-accent-cyan/10 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <h3 className="text-lg font-semibold text-ink-100">
+              បង្កើត CV ថ្មី / Create New CV
+            </h3>
+            <p className="mt-1 max-w-xl text-sm text-ink-200">
+              Standard 2D A4 résumé · live Khmer-safe preview · export to PDF / PNG / ATS.
+            </p>
+          </div>
+          <span className="shrink-0 rounded-full bg-accent-cyan px-5 py-2.5 text-sm font-semibold text-ink-950">
+            ចាប់ផ្ដើម · Start →
+          </span>
+        </Link>
       </section>
     </main>
   );
