@@ -61,6 +61,16 @@ export function TelegramLoginButton({ buttonLabel = "ចូលប្រើជា
 
     let init: InitResponse;
     try {
+      // Before starting, check if we already have a session (race condition / auto-login)
+      const check = await fetch("/api/auth/poll?check=true", { cache: "no-store" });
+      if (check.ok) {
+        const body = await check.json();
+        if (body.status === "ok") {
+          window.location.replace("/dashboard");
+          return;
+        }
+      }
+
       const res = await fetch("/api/auth/init", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -164,7 +174,7 @@ export function TelegramLoginButton({ buttonLabel = "ចូលប្រើជា
         <button
           type="button"
           onClick={startLogin}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#229ED9] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-[#229ED9]/30 transition hover:bg-[#1f8fc4] focus:outline-none focus:ring-2 focus:ring-[#229ED9] focus:ring-offset-2 focus:ring-offset-black"
+          className="inline-flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#229ED9] to-[#1f8fc4] px-6 py-4 text-base font-bold text-white shadow-[0_10px_20px_-5px_rgba(34,158,217,0.4)] transition-all hover:scale-[1.02] hover:shadow-[0_15px_25px_-5px_rgba(34,158,217,0.5)] active:scale-[0.98] focus:outline-none"
         >
           <TelegramLogoSvg />
           {buttonLabel}

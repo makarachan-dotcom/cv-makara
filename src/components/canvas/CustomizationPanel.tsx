@@ -82,7 +82,7 @@ export function CustomizationPanel({
         <legend className="text-xs text-ink-200">គម្លាតបន្ទាត់ · Line spacing</legend>
         <label className="mt-2 block">
           <span className="flex items-center justify-between text-[11px] text-ink-200">
-            <span className="uppercase tracking-wider">Spacing</span>
+            <span className="uppercase tracking-wider">គម្លាត</span>
             <span className="font-mono text-ink-100">{lineSpacing.toFixed(2)}</span>
           </span>
           <input
@@ -101,7 +101,7 @@ export function CustomizationPanel({
       <fieldset>
         <legend className="text-xs text-ink-200">ពណ៌សញ្ញា · Accent</legend>
         <label className="mt-2 flex items-center justify-between rounded-lg border border-ink-700 px-3 py-2">
-          <span className="text-[11px] uppercase tracking-wider text-ink-200">Heading colour</span>
+          <span className="text-[11px] uppercase tracking-wider text-ink-200">ពណ៌ចំណងជើង</span>
           <input
             type="color"
             value={accent}

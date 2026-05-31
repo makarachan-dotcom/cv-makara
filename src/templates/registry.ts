@@ -40,7 +40,7 @@ export const TEMPLATES: ReadonlyArray<TemplateMeta> = [
   // --------------------------------------------------- STANDARD 2D (free, only)
   {
     id: STANDARD_TEMPLATE_ID,
-    name: "Standard 2D Resume",
+    name: "NURF MY CV Standard",
     description:
       "Clean, ATS-friendly A4 résumé with a live, pixel-perfect Khmer-safe preview. Answer the AI interview on the left and watch the document render in real time.",
     category: "minimal",

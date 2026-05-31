@@ -38,7 +38,7 @@ type Status = "idle" | "holding" | "completing" | "revealed" | "error";
  */
 export function HoldToReveal({
   durationMs = 3000,
-  label = "Hold to contact admin (3s)",
+  label = "សង្កត់ដើម្បីទាក់ទង Admin (3s)",
   className,
   onReveal,
 }: Props) {
@@ -234,10 +234,10 @@ export function HoldToReveal({
           {status === "error"
             ? errorMsg ?? "Failed; release and try again"
             : status === "completing"
-            ? "Verifying…"
+            ? "កំពុងផ្ទៀងផ្ទាត់…"
             : status === "revealed"
-            ? "Opening Telegram…"
-            : "Press and hold for 3 seconds"}
+            ? "កំពុងបើក Telegram…"
+            : "សូមចុចសង្កត់ឱ្យជាប់រយៈពេល ៣ វិនាទី"}
         </span>
       </span>
     </button>

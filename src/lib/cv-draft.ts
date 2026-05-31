@@ -9,7 +9,7 @@ import {
 } from "@/types/cv";
 
 // =============================================================================
-// MakaraCvDraft
+// NURF MY CV Draft
 // -----------------------------------------------------------------------------
 // The portable, Khmer-first CV model produced by the AI Khmer Interviewer and
 // consumed by the 2D A4 document renderer + the multi-format export engine.

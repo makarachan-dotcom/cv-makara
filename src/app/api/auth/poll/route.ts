@@ -26,6 +26,19 @@ function jsonError(code: string, message: string, status: number) {
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const token = url.searchParams.get("token");
+  const check = url.searchParams.get("check");
+
+  // If we're just checking for an existing session (auto-login)
+  if (check === "true") {
+    const existingSession = await resolveSessionFromCookieStore();
+    if (existingSession) {
+      return NextResponse.json(
+        { status: "ok", userId: existingSession.userId.toString(), role: existingSession.isAdmin ? "ADMIN" : "USER" },
+        { headers: { "cache-control": "no-store" } },
+      );
+    }
+    return NextResponse.json({ status: "pending" }, { headers: { "cache-control": "no-store" } });
+  }
 
   if (!isValidLoginToken(token)) {
     return jsonError("TOKEN_INVALID", "Login token is missing or malformed.", 400);

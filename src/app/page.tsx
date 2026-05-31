@@ -7,7 +7,7 @@ export default function HomePage() {
     <main className="mx-auto max-w-5xl px-6 py-16">
       <header className="mb-12">
         <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent-cyan">
-          Makara CV · Khmer Resume Studio
+          NURF MY CV · Premium Khmer Resume Studio
         </p>
         <h1 className="mt-3 text-4xl font-semibold leading-tight">
           <span className="text-gradient-flow">A focused 2D résumé studio, built for Khmer.</span>
@@ -15,10 +15,8 @@ export default function HomePage() {
           <span className="text-ink-200">Telegram-secured. AI-interviewed. ATS-ready.</span>
         </h1>
         <p className="mt-4 max-w-2xl text-ink-200">
-          An AI career consultant interviews you <strong>in Khmer</strong> to surface real metrics,
-          then renders a pixel-perfect A4 CV with professional Khmer Unicode fonts (Kantumruy Pro,
-          Hanuman, Nokora, Siemreap) — clip-free, and exportable to PDF, PNG and ATS. Each
-          verified user gets <strong>2 generations per 7 days</strong>, enforced server-side.
+          <strong>NURF MY CV</strong> is an AI career consultant that interviews you <strong>in Khmer</strong> to surface real metrics,
+          then renders a pixel-perfect A4 CV with professional Khmer Unicode fonts — clip-free, and exportable to PDF, PNG and ATS.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <Link
@@ -31,7 +29,7 @@ export default function HomePage() {
             href="/login"
             className="rounded-full border border-ink-700 px-5 py-2.5 text-sm text-ink-100 transition hover:bg-ink-800"
           >
-            Sign in with Telegram
+            ចូលប្រើជាមួយ Telegram
           </Link>
           <Link
             href="/dashboard"

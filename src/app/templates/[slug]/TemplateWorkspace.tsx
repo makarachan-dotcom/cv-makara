@@ -66,9 +66,9 @@ const DEMO_CV: CVInput = {
     { name: "Leadership", domain: "leadership", proficiency: 80 },
   ],
   education: [],
-  projects: [
+      projects: [
     {
-      name: "Chrono CV",
+      name: "NURF MY CV",
       summary: "A Telegram-secured CV builder gamified behind a 7-day streak.",
       stack: ["Next.js", "Prisma", "Supabase"],
     },
@@ -250,7 +250,7 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
         <section className="relative flex min-h-screen flex-col border-ink-800/60 lg:border-r">
               <header className="border-b border-ink-800/60 px-6 py-5">
             <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-accent-cyan">
-              គំរូ CV · {template.category}
+              NURF MY CV · {template.category}
             </p>
             <h1 className="mt-1 text-xl font-semibold leading-khmer-tight">{template.name}</h1>
             <p className="mt-1 max-w-md text-xs leading-khmer-tight text-ink-200">

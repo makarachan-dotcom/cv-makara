@@ -41,6 +41,15 @@ export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (isPublic(pathname)) {
+    // If user has a valid session and is visiting /login, auto-redirect to dashboard
+    if (pathname === "/login") {
+      const cookie = req.cookies.get(SESSION_COOKIE_NAME)?.value;
+      if (cookie && cookie.includes(".")) {
+        const dashboard = req.nextUrl.clone();
+        dashboard.pathname = "/dashboard";
+        return NextResponse.redirect(dashboard);
+      }
+    }
     return NextResponse.next();
   }
 

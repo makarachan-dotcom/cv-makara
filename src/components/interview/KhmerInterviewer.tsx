@@ -80,7 +80,7 @@ const STAGE_TITLES: Record<Stage, string> = {
   middleSchool: "ការសិក្សា — អនុវិទ្យាល័យ",
   highSchool: "ការសិក្សា — វិទ្យាល័យ",
   languages: "ភាសា",
-  review: "ពិនិត្យ និងបង្កើត CV",
+  review: "ពិនិត្យ និងបង្កើត NURF MY CV",
 };
 
 const MIDDLE_GRADES = ["ទី៧", "ទី៨", "ទី៩", "ទី១០", "ទី១១", "ទី១២"] as const;

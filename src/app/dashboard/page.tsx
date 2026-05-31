@@ -176,7 +176,7 @@ export default async function DashboardPage() {
 
       <section className="mt-10">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-accent-cyan">
-          Create
+          បង្កើតថ្មី · Create
         </h2>
         <Link
           href={`/templates/${STANDARD_TEMPLATE_ID}`}
@@ -195,6 +195,21 @@ export default async function DashboardPage() {
           </span>
         </Link>
       </section>
+
+      <footer className="mt-20 flex flex-col items-center gap-3 border-t border-white/5 pt-12 pb-8">
+        <div className="flex items-center gap-3">
+          <div className="relative h-8 w-8">
+            <div className="absolute inset-0 animate-spin-slow rounded-full border border-dashed border-accent-cyan/30" />
+            <div className="absolute inset-1.5 animate-pulse rounded-full bg-gradient-to-br from-accent-cyan to-indigo-500 shadow-[0_0_10px_rgba(34,211,238,0.4)]" />
+          </div>
+          <span className="animate-gradient-flow bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-lg font-black tracking-tighter text-transparent">
+            NURF MY CV
+          </span>
+        </div>
+        <p className="text-[9px] uppercase tracking-[0.4em] text-ink-500">
+          Premium 2D Resume Studio · 100% Khmer Safe
+        </p>
+      </footer>
     </main>
   );
 }

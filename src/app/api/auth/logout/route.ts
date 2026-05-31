@@ -14,5 +14,5 @@ export async function POST() {
     await destroySession(session.sessionId);
   }
   clearSessionCookie();
-  return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
+  return NextResponse.redirect(new URL("/login", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"));
 }

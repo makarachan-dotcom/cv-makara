@@ -36,9 +36,9 @@ const siemreap = Siemreap({
 });
 
 export const metadata: Metadata = {
-  title: "Makara CV — Khmer 2D Resume Studio",
+  title: "NURF MY CV — Premium Khmer 2D Resume Studio",
   description:
-    "Build a pixel-perfect Khmer CV with a live 2D A4 preview. Telegram-secured. AI Khmer career interviewer, ATS-friendly, multi-format export (PDF / PNG / ATS).",
+    "NURF MY CV helps you build a pixel-perfect Khmer CV with a live 2D A4 preview. Telegram-secured. AI Khmer career interviewer, ATS-friendly, multi-format export.",
 };
 
 export const viewport = {
