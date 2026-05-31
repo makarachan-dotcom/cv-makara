@@ -123,6 +123,15 @@ export function TelegramLoginButton({ buttonLabel = "Sign in with Telegram" }: P
           setErrorMessage("Login link expired. Try again.");
           return;
         }
+        // Race condition: another tab already consumed the token but we now have
+        // a valid session cookie. Treat as success and redirect.
+        if (code === "TOKEN_ALREADY_USED") {
+          setPhase("success");
+          const next =
+            new URLSearchParams(window.location.search).get("next") ?? "/dashboard";
+          window.location.assign(next);
+          return;
+        }
         // Unknown error: surface and stop.
         setPhase("error");
         setErrorMessage(body.error.message || code);

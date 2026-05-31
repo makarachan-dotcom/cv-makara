@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { isValidLoginToken } from "@/lib/login-token";
-import { createSession, setSessionCookie } from "@/lib/session";
+import { createSession, setSessionCookie, resolveSessionFromCookieStore } from "@/lib/session";
 import { roleForTelegramId } from "@/lib/admin";
 
 export const runtime = "nodejs";
@@ -52,6 +52,16 @@ export async function GET(req: NextRequest) {
   }
 
   if (row.status === "CONSUMED") {
+    // Race-condition guard: if this client already has a valid session (e.g. a
+    // second browser tab consumed the token first, or the user refreshed after
+    // login), don't show the red error banner — just tell the client to proceed.
+    const existingSession = await resolveSessionFromCookieStore();
+    if (existingSession) {
+      return NextResponse.json(
+        { status: "ok", userId: existingSession.userId.toString(), role: existingSession.isAdmin ? "ADMIN" : "USER" },
+        { headers: { "cache-control": "no-store" } },
+      );
+    }
     return jsonError("TOKEN_ALREADY_USED", "Login token already exchanged for a session.", 409);
   }
 
