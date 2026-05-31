@@ -91,6 +91,8 @@ export function HoldToReveal({
         const { url } = (await verifyRes.json()) as { url: string };
 
         setStatus("revealed");
+        // Haptic: distinct success pulse pattern on completion.
+        if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate([40, 40, 40]);
         if (onReveal) onReveal(url);
         else window.location.assign(url);
       } catch (err) {
@@ -126,6 +128,8 @@ export function HoldToReveal({
     setProgress(0);
     if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     frameRef.current = requestAnimationFrame(tick);
+    // Haptic: micro-vibration on press-down for tactile acknowledgement.
+    if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(15);
   }, [status, tick]);
 
   useEffect(() => () => {
