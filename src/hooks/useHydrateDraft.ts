@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export function useHydrateDraft<T>(endpoint = "/api/auth/load-draft") {
-  const [data, setData] = useState<T null |>(null);
+  const [data, setData] = useState<T | null>(null);
   const [ready, setReady] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
