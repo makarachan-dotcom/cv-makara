@@ -5,71 +5,87 @@ import { STANDARD_TEMPLATE_ID } from "@/templates/registry";
 export default function HomePage() {
   return (
     <main className="mx-auto max-w-5xl px-6 py-16">
-      <header className="mb-12">
+      <header className="mb-16">
         <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent-cyan">
           NURF MY CV · Premium Khmer Resume Studio
         </p>
-        <h1 className="mt-3 text-4xl font-semibold leading-tight">
-          <span className="text-gradient-flow">A focused 2D résumé studio, built for Khmer.</span>
+        <h1 className="mt-4 text-4xl font-bold leading-tight md:text-5xl">
+          <span className="text-gradient-flow">ស្ទូឌីយោបង្កើត CV 2D ដ៏ទំនើប សម្រាប់ជនជាតិខ្មែរ។</span>
           <br />
-          <span className="text-ink-200">Telegram-secured. AI-interviewed. ATS-ready.</span>
+          <span className="text-ink-200">សុវត្ថិភាពតាម Telegram · សម្ភាសន៍ដោយ AI · ស្តង់ដារ ATS។</span>
         </h1>
-        <p className="mt-4 max-w-2xl text-ink-200">
-          <strong>NURF MY CV</strong> is an AI career consultant that interviews you <strong>in Khmer</strong> to surface real metrics,
-          then renders a pixel-perfect A4 CV with professional Khmer Unicode fonts — clip-free, and exportable to PDF, PNG and ATS.
+        <p className="mt-6 max-w-2xl text-lg leading-khmer text-ink-200">
+          <strong>NURF MY CV</strong> គឺជាទីប្រឹក្សាអាជីព AI ដែលនឹងសម្ភាសន៍អ្នក <strong>ជាភាសាខ្មែរ</strong> ដើម្បីទាញយកសមិទ្ធផលពិតប្រាកដរបស់អ្នក 
+          រួចបង្កើតជា CV ទំហំ A4 ដ៏ល្អឥតខ្ចោះ ជាមួយពុម្ពអក្សរយូនីកូដខ្មែរអាជីព — មិនកាត់ដាច់អក្សរ និងអាចទាញយកជា PDF, PNG និង ATS បានភ្លាមៗ។
         </p>
-        <div className="mt-8 flex flex-wrap items-center gap-4">
+        <div className="mt-10 flex flex-wrap items-center gap-4">
           <Link
             href="/studio"
-            className="rounded-full bg-accent-cyan px-5 py-2.5 text-sm font-semibold text-ink-950 transition hover:bg-accent-cyan/90"
+            className="rounded-full bg-accent-cyan px-8 py-3.5 text-sm font-bold text-ink-950 transition-all hover:scale-105 hover:bg-accent-cyan/90 shadow-[0_10px_20px_-5px_rgba(34,211,238,0.4)]"
           >
             បើកស្ទូឌីយោ CV · Open Studio
           </Link>
           <Link
             href="/login"
-            className="rounded-full border border-ink-700 px-5 py-2.5 text-sm text-ink-100 transition hover:bg-ink-800"
+            className="rounded-full border border-white/10 bg-white/5 px-8 py-3.5 text-sm font-semibold text-ink-100 backdrop-blur-md transition-all hover:bg-white/10 hover:border-white/20"
           >
             ចូលប្រើជាមួយ Telegram
           </Link>
           <Link
             href="/dashboard"
-            className="rounded-full border border-ink-700 px-5 py-2.5 text-sm text-ink-100 transition hover:bg-ink-800"
+            className="rounded-full border border-white/10 bg-white/5 px-8 py-3.5 text-sm font-semibold text-ink-100 backdrop-blur-md transition-all hover:bg-white/10 hover:border-white/20"
           >
-            Open dashboard
+            ផ្ទាំងគ្រប់គ្រង
           </Link>
         </div>
       </header>
 
-      <section className="tilt-3d glass-card rounded-xl border border-accent-cyan/40 p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-accent-cyan">
-          Three high-fidelity résumé layouts
+      <section className="tilt-3d glass-card group rounded-3xl border border-white/15 bg-neutral-900/80 p-8 backdrop-blur-xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] transition-all duration-300 hover:-translate-y-1.5">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-accent-cyan">
+          ប្លង់ CV កម្រិតខ្ពស់ចំនួន ៣ ប្រភេទ
         </h2>
-        <p className="mt-2 max-w-2xl text-sm text-ink-200">
-          Clean, ATS-friendly A4 models — Modern Minimalist, Executive Pro and Creative Vibrant —
-          each with a live, Khmer-safe phone preview. No heavy 3D scenes: just a fast, focused
-          authoring flow with a real-time document preview and one-tap layout switching.
+        <p className="mt-3 max-w-2xl text-sm leading-khmer text-ink-200">
+          ម៉ូដែល A4 ដែលស្អាត និងងាយស្រួលអានដោយប្រព័ន្ធ ATS — Modern Minimalist, Executive Pro និង Creative Vibrant — 
+          នីមួយៗមានការបង្ហាញគំរូផ្ទាល់លើទូរស័ព្ទ។ គ្មានឈុតឆាក 3D ស្មុគស្មាញ៖ ផ្តោតលើល្បឿន និងភាពច្បាស់លាស់ ជាមួយការបង្ហាញលទ្ធផលភ្លាមៗ។
         </p>
         <Link
           href={`/templates/${STANDARD_TEMPLATE_ID}`}
-          className="mt-4 inline-flex rounded-full bg-accent-cyan px-5 py-2.5 text-sm font-semibold text-ink-950 transition hover:bg-accent-cyan/90"
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-accent-cyan px-6 py-3 text-sm font-bold text-ink-950 transition-all hover:bg-accent-cyan/90"
         >
-          បង្កើត CV ថ្មី / Create New CV →
+          បង្កើត CV ថ្មី / Create New CV <span className="text-lg">→</span>
         </Link>
       </section>
 
-      <section className="mt-16 tilt-3d glass-card rounded-xl border border-ink-700 p-8">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-accent-cyan">
-          Need to talk to an admin?
+      <section className="mt-12 tilt-3d glass-card rounded-3xl border border-white/15 bg-neutral-900/80 p-8 backdrop-blur-xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] transition-all duration-300 hover:-translate-y-1.5">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-accent-cyan">
+          តើអ្នកត្រូវការទាក់ទងអ្នកគ្រប់គ្រង (Admin) ឬ?
         </h2>
-        <p className="mt-2 max-w-xl text-sm text-ink-200">
-          The admin Telegram handle is cryptographically hidden behind a 3-second hold. Bots and
-          scrapers cannot bypass this — the button only fires after a verified press-and-hold
-          handshake.
+        <p className="mt-3 max-w-xl text-sm leading-khmer text-ink-200">
+          គណនី Telegram របស់អ្នកគ្រប់គ្រងត្រូវបានការពារដោយការសម្ងាត់។ ប្រព័ន្ធនឹងបង្ហាញតំណភ្ជាប់ លុះត្រាតែអ្នកចុចសង្កត់ឱ្យជាប់រយៈពេល ៣ វិនាទី 
+          ដើម្បីបញ្ជាក់ថាអ្នកមិនមែនជាកម្មវិធីស្វ័យប្រវត្ត (Bot)។
         </p>
-        <div className="mt-4">
-          <HoldToReveal />
+        <div className="mt-6">
+          <HoldToReveal 
+            label="សង្កត់ដើម្បីទាក់ទង Admin (3s)" 
+            className="group relative inline-flex select-none items-center gap-4 rounded-2xl border border-white/10 bg-black/40 px-8 py-4 text-sm text-ink-100 transition hover:bg-black/60 hover:border-accent-cyan/40"
+          />
         </div>
       </section>
+
+      <footer className="mt-24 flex flex-col items-center gap-4 border-t border-white/5 pt-16 pb-12">
+        <div className="flex items-center gap-4">
+          <div className="relative h-12 w-12">
+            <div className="absolute inset-0 animate-spin-slow rounded-full border-2 border-dashed border-accent-cyan/30" />
+            <div className="absolute inset-2 animate-pulse rounded-full bg-gradient-to-br from-accent-cyan to-indigo-500 shadow-[0_0_20px_rgba(34,211,238,0.5)]" />
+          </div>
+          <span className="animate-gradient-flow bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-2xl font-black tracking-tighter text-transparent">
+            NURF MY CV
+          </span>
+        </div>
+        <p className="text-[10px] uppercase tracking-[0.5em] text-ink-400">
+          Premium 2D Resume Studio · 100% Khmer Safe
+        </p>
+      </footer>
     </main>
   );
 }
