@@ -7,16 +7,7 @@ import type { CvLayoutId } from "@/templates/registry";
 
 // =============================================================================
 // PhonePreview — an interactive, CSS-rendered premium smartphone mockup that
-// frames the live, CSS-scaled A4 CvDocument. No images, no WebGL: pure CSS
-// (rounded chassis, speaker notch, metallic bezel, lifted shadow). The CV is
-// scaled to the device screen width and scrolls vertically *inside* the screen,
-// so the authoring preview feels like holding the finished résumé on a phone.
-//
-// Accurate in-screen scrolling: a CSS `transform: scale()` does not shrink an
-// element's layout box, which would otherwise produce a wrong scroll height. We
-// measure the document's natural height with a ResizeObserver and size the
-// scroll track to `height × scale`, so the scrollbar always matches the visible
-// document exactly — even as the font / spacing / layout / draft change.
+// frames the live, CSS-scaled A4 CvDocument.
 // =============================================================================
 
 const A4_WIDTH = 794;
@@ -58,7 +49,10 @@ export function PhonePreview({
 
   const screenWidth = deviceWidth - BEZEL * 2;
   const scale = screenWidth / A4_WIDTH;
-  const screenHeight = Math.round(screenWidth * 2.04); // tall modern aspect
+  
+  // Optimized: Use a slightly more flexible height calculation to avoid excessive vertical scrolling
+  // on smaller viewports while maintaining the premium aspect ratio.
+  const screenHeight = Math.round(screenWidth * 2.1); 
   const trackHeight = Math.round(naturalHeight * scale);
 
   return (
@@ -90,7 +84,7 @@ export function PhonePreview({
 
           {/* Scrollable document viewport. */}
           <div
-            className="h-full w-full overflow-y-auto overflow-x-hidden"
+            className="h-full w-full overflow-y-auto overflow-x-hidden scrollbar-hide"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
             <div style={{ height: trackHeight, width: screenWidth, position: "relative" }}>

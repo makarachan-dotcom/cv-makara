@@ -96,6 +96,20 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+/**
+ * Helper to safely parse JSON from a fetch response.
+ */
+async function safeParseJson<T>(res: Response): Promise<T | null> {
+  try {
+    const text = await res.text();
+    if (!text || res.status === 204) return null;
+    return JSON.parse(text) as T;
+  } catch (e) {
+    console.error("[INTERVIEWER_JSON_PARSE_ERROR]", e);
+    return null;
+  }
+}
+
 export function KhmerInterviewer({
   onComplete,
   persist = false,
@@ -413,8 +427,10 @@ export function KhmerInterviewer({
         }
         throw new Error(`ការបង្ហោះបរាជ័យ (${res.status}).`);
       }
-      const json = (await res.json()) as { certificate: CertificateRef };
-      setHsCerts((prev) => [...prev, json.certificate]);
+      const json = await safeParseJson<{ certificate: CertificateRef }>(res);
+      if (json?.certificate) {
+        setHsCerts((prev) => [...prev, json.certificate]);
+      }
     } catch (err) {
       setCertError(err instanceof Error ? err.message : "ការបង្ហោះបរាជ័យ។");
     } finally {
@@ -607,9 +623,9 @@ export function KhmerInterviewer({
           body: JSON.stringify({ action: "finalize", industry, draft, answers: collectAnswers() }),
         });
         if (res.ok) {
-          const json = (await res.json()) as { draft?: MakaraCvDraft; draftId?: string | null };
-          if (json.draft) finalDraft = json.draft;
-          draftId = json.draftId ?? null;
+          const json = await safeParseJson<{ draft?: MakaraCvDraft; draftId?: string | null }>(res);
+          if (json?.draft) finalDraft = json.draft;
+          draftId = json?.draftId ?? null;
         }
       } catch {
         /* offline / route not yet updated — use client draft */

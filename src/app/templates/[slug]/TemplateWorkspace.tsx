@@ -29,8 +29,6 @@ interface Props {
 }
 
 // Minimal demo CV used as the body for the "Deploy to Web" generation request.
-// The strict CVInput pipeline (/api/generate) is preserved exactly as-is; this
-// payload is unrelated to the loose MakaraCvDraft authored in the interviewer.
 const DEMO_CV: CVInput = {
   profile: {
     firstName: "Avery",
@@ -66,7 +64,7 @@ const DEMO_CV: CVInput = {
     { name: "Leadership", domain: "leadership", proficiency: 80 },
   ],
   education: [],
-      projects: [
+  projects: [
     {
       name: "NURF MY CV",
       summary: "A Telegram-secured CV builder gamified behind a 7-day streak.",
@@ -82,6 +80,22 @@ interface ActiveDraftSummary {
 }
 
 type FormPhase = "editing" | "saved";
+
+/**
+ * Helper to safely parse JSON from a fetch response.
+ * If the response is not valid JSON (e.g., an HTML error page), returns null
+ * instead of throwing a runtime error that would kill the app shell.
+ */
+async function safeParseJson<T>(res: Response): Promise<T | null> {
+  try {
+    const text = await res.text();
+    if (!text || res.status === 204) return null;
+    return JSON.parse(text) as T;
+  } catch (e) {
+    console.error("[STUDIO_JSON_PARSE_ERROR]", e);
+    return null;
+  }
+}
 
 export function TemplateWorkspace({ template, unlocked, streak }: Props) {
   const [showLockedModal, setShowLockedModal] = useState(false);
@@ -109,21 +123,15 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
 
   const openMobilePreview = useCallback(() => {
     setMobileMounted(true);
-    // Next frame: flip the visibility flag so the CSS transition animates in.
     requestAnimationFrame(() => setMobileVisible(true));
   }, []);
 
-  // Both "Close" and "Back" call this — it animates out, then unmounts. The
-  // KhmerInterviewer underneath is never unmounted, so the stepper returns to
-  // the exact question/position the user left.
   const closeMobilePreview = useCallback(() => {
     setMobileVisible(false);
     window.setTimeout(() => setMobileMounted(false), 220);
   }, []);
 
   // ---- Draft gate (unbypassable AI consultation, preserved) ----------------
-  // "Deploy to Web" requires a saved ACTIVE draft. `draftState` distinguishes
-  // "still checking" (undefined) from "checked, none" (null).
   const [draftState, setDraftState] = useState<ActiveDraftSummary | null | undefined>(undefined);
 
   const refreshDraft = useCallback(async () => {
@@ -133,10 +141,11 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
         setDraftState(null);
         return;
       }
-      const json = (await res.json()) as {
+      const json = await safeParseJson<{
         draft: { id: string; data: { fullName: string; headline: string } } | null;
-      };
-      if (json.draft) {
+      }>(res);
+      
+      if (json?.draft) {
         setDraftState({
           id: json.draft.id,
           fullName: json.draft.data.fullName,
@@ -176,13 +185,11 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
     [refreshDraft],
   );
 
-  // Re-hydrate the stepper from the just-saved draft (CV History "Rewrite").
   const handleRewrite = useCallback(() => {
     setPhase("editing");
     setInterviewerKey((k) => k + 1);
   }, []);
 
-  // Start a brand-new consultation from a clean slate.
   const handleNewConsultation = useCallback(() => {
     setSavedDraft(null);
     setSavedIndustry(null);
@@ -208,22 +215,21 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(DEMO_CV),
       });
-      const body = (await res.json()) as Record<string, unknown>;
+      const body = await safeParseJson<Record<string, unknown>>(res);
       if (!res.ok) {
-        const errObj = body.error as { code?: string; message?: string } | undefined;
-        // The draft was archived/expired between the gate check and submit.
+        const errObj = body?.error as { code?: string; message?: string } | undefined;
         if (errObj?.code === "DRAFT_REQUIRED") {
           setDraftState(null);
           setPhase("editing");
           setDeployResult("ត្រូវការការសម្ភាសន៍ AI ម្ដងទៀត។");
           return;
         }
-        setDeployResult(`Failed: ${errObj?.message ?? `HTTP ${res.status}`}`);
+        setDeployResult(`បរាជ័យ: ${errObj?.message ?? `HTTP ${res.status}`}`);
       } else {
-        setDeployResult("Deployed. Check your dashboard for the live CV link.");
+        setDeployResult("បានជោគជ័យ! សូមពិនិត្យមើល Dashboard របស់អ្នកសម្រាប់តំណភ្ជាប់ CV។");
       }
     } catch (err) {
-      setDeployResult(err instanceof Error ? err.message : "Unknown error");
+      setDeployResult(err instanceof Error ? err.message : "កំហុសមិនស្គាល់");
     } finally {
       setDeploying(false);
     }
@@ -236,19 +242,17 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
         ? "បំពេញការសម្ភាសន៍ជាមុនសិន"
         : unlocked
           ? deploying
-            ? "Deploying…"
-            : "Deploy to Web"
-          : "Locked — see streak";
+            ? "កំពុងបញ្ជូន…"
+            : "ដាក់ផ្សាយទៅកាន់ Web"
+          : "ជាប់សោ — មើល streak";
 
   return (
     <main className="relative min-h-screen text-ink-100">
-      {/* Ultra-low-overhead CSS backdrop (no WebGL → no context-loss crash). */}
       <CVCanvas accent={accent} className="fixed inset-0 -z-10" />
 
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-        {/* =================== LEFT: step-by-step intake form =================== */}
         <section className="relative flex min-h-screen flex-col border-ink-800/60 lg:border-r">
-              <header className="border-b border-ink-800/60 px-6 py-5">
+          <header className="border-b border-ink-800/60 px-6 py-5">
             <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-accent-cyan">
               NURF MY CV · {template.category}
             </p>
@@ -301,7 +305,6 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
             )}
           </div>
 
-          {/* Deploy / streak-gate footer (generation pipeline preserved). */}
           <footer className="space-y-2 border-t border-ink-800/60 bg-ink-950/80 px-5 pt-4 pb-24 backdrop-blur lg:pb-4">
             <div className="flex flex-wrap items-center gap-3">
               <button
@@ -331,17 +334,16 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
           </footer>
         </section>
 
-        {/* ================ RIGHT: live A4 preview (desktop only) ================ */}
         <section className="relative hidden lg:block">
           <div className="sticky top-0 flex h-screen flex-col">
             <div className="flex items-center justify-between border-b border-ink-800/60 px-6 py-4">
               <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-accent-cyan">
-              មើលគំរូផ្ទាល់ · Live Preview
-            </p>
-            <h2 className="text-sm font-semibold leading-khmer-tight text-ink-100">
-              គំរូ CV ទំហំ A4
-            </h2>
+                <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-accent-cyan">
+                  មើលគំរូផ្ទាល់ · Live Preview
+                </p>
+                <h2 className="text-sm font-semibold leading-khmer-tight text-ink-100">
+                  គំរូ CV ទំហំ A4
+                </h2>
               </div>
             </div>
 
@@ -374,16 +376,14 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
         </section>
       </div>
 
-      {/* ===================== MOBILE: floating preview CTA ===================== */}
       <button
         type="button"
         onClick={openMobilePreview}
         className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-accent-cyan px-6 py-3 text-sm font-semibold text-ink-950 shadow-lg shadow-accent-cyan/20 transition hover:bg-accent-cyan/90 lg:hidden w-full max-w-[200px] whitespace-nowrap"
       >
-        មើលគំរូ CV / Click Preview
+        មើលគំរូ CV / Preview
       </button>
 
-      {/* ===================== MOBILE: full-screen preview modal ================ */}
       {mobileMounted && (
         <div
           role="dialog"
@@ -444,7 +444,6 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
         </div>
       )}
 
-      {/* ===================== Premium lock / streak modal ===================== */}
       {showLockedModal && (
         <div
           role="dialog"
@@ -456,10 +455,9 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
             className="w-full max-w-md rounded-2xl border border-ink-700 bg-ink-900 p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-semibold">Premium template is locked</h2>
+            <h2 className="text-lg font-semibold">គំរូ Premium ត្រូវបានជាប់សោ</h2>
             <p className="mt-2 text-sm text-ink-200">
-              You can author and preview this CV fully, but deploying requires a completed 7-day
-              check-in streak.
+              អ្នកអាចសរសេរ និងមើលគំរូ CV នេះបានពេញលេញ ប៉ុន្តែការដាក់ផ្សាយតម្រូវឱ្យមានការឆែកឈ្មោះ (Check-in) រយៈពេល ៧ ថ្ងៃជាប់គ្នា។
             </p>
             <div className="mt-4">
               <StreakMatrix
@@ -474,11 +472,11 @@ export function TemplateWorkspace({ template, unlocked, streak }: Props) {
                 className="rounded border border-ink-700 px-3 py-1.5 text-xs text-ink-200 hover:bg-ink-800"
                 onClick={() => setShowLockedModal(false)}
               >
-                Close
+                បិទ / Close
               </button>
               <form action="/api/checkin" method="post">
                 <button className="rounded bg-accent-cyan px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-accent-cyan/90">
-                  Check in for today
+                  ឆែកឈ្មោះសម្រាប់ថ្ងៃនេះ / Check in
                 </button>
               </form>
             </div>
