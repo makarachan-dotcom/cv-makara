@@ -152,10 +152,10 @@ export function TelegramLoginButton({ buttonLabel = "ចូលប្រើជា
 
       if (body.status === "ok") {
         setPhase("success");
-        const next =
-          new URLSearchParams(window.location.search).get("next") ?? "/dashboard";
-        // Forceful hard browser redirect to bypass any blocking loops
-        window.location.replace(next);
+        // BRUTE-FORCE: Immediate hard browser sweep
+        window.location.href = "/dashboard";
+        // Fallback for safety
+        setTimeout(() => { window.location.replace("/dashboard"); }, 500);
         return;
       }
     }
@@ -224,9 +224,12 @@ export function TelegramLoginButton({ buttonLabel = "ចូលប្រើជា
       ) : null}
 
       {phase === "success" ? (
-        <div className="rounded-lg bg-emerald-500/10 px-4 py-3 text-sm leading-khmer text-emerald-300">
-          បានចូលប្រើប្រាស់រួចរាល់។ កំពុងបញ្ជូនបន្ត…
-        </div>
+        <a
+          href="/dashboard"
+          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-6 py-4 text-sm font-bold text-white shadow-[0_10px_20px_-5px_rgba(16,185,129,0.4)] transition-all hover:scale-[1.02] hover:bg-emerald-400"
+        >
+          ✓ បានជោគជ័យ! ចុចត្រង់នេះដើម្បីចូលទៅ Dashboard
+        </a>
       ) : null}
 
       {phase === "error" && errorMessage ? (
