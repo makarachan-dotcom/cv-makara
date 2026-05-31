@@ -2,18 +2,21 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { SESSION_COOKIE_NAME } from "@/lib/session-cookie-name";
 
-const DEFAULT_DRAFT_INDUSTRY = "general";
+const DEFAULT_INDUSTRY = "general";
+
+function extractSessionIdFromCookie(rawCookie: string | undefined): string | null {
+  if (!rawCookie) return null;
+  const dotIndex = rawCookie.indexOf(".");
+  if (dotIndex === 0) return null;
+  const sessionId = dotIndex > 0 ? rawCookie.slice(0, dotIndex) : rawCookie;
+  return sessionId.length > 0 ? sessionId : null;
+}
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
-    const rawCookie = req.cookies.get(SESSION_COOKIE_NAME)?.value;
-    const dotIndex = rawCookie?.indexOf(".") ?? -1;
-    const sessionId =
-      dotIndex > 0
-        ? rawCookie?.slice(0, dotIndex)
-        : rawCookie && rawCookie.length > 0
-          ? rawCookie
-          : null;
+    const sessionId = extractSessionIdFromCookie(
+      req.cookies.get(SESSION_COOKIE_NAME)?.value,
+    );
     if (!sessionId) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
@@ -44,7 +47,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return tx.cvDraft.create({
         data: {
           userId: session.userId,
-          industry: DEFAULT_DRAFT_INDUSTRY,
+          industry: DEFAULT_INDUSTRY,
           status: "ACTIVE",
           data: body,
           answers: {},
