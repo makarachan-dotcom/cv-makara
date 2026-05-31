@@ -7,7 +7,8 @@ import type { CvLayoutId } from "@/templates/registry";
 
 // =============================================================================
 // PhonePreview — an interactive, CSS-rendered premium smartphone mockup that
-// frames the live, CSS-scaled A4 CvDocument.
+// frames the live, CSS-scaled A4 CvDocument with dynamic auto-scaling and
+// high-contrast dark studio aesthetics.
 // =============================================================================
 
 const A4_WIDTH = 794;
@@ -34,9 +35,28 @@ export function PhonePreview({
   deviceWidth = 340,
   className,
 }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const [naturalHeight, setNaturalHeight] = useState(A4_HEIGHT);
+  const [containerWidth, setContainerWidth] = useState(deviceWidth);
 
+  // Dynamic container width observer for responsive scaling
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container || typeof ResizeObserver === "undefined") return;
+
+    const measureContainer = () => {
+      const width = container.offsetWidth;
+      if (width > 0) setContainerWidth(width);
+    };
+
+    measureContainer();
+    const ro = new ResizeObserver(measureContainer);
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, []);
+
+  // Measure the natural height of the rendered CV document
   useLayoutEffect(() => {
     const el = innerRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
@@ -47,23 +67,26 @@ export function PhonePreview({
     return () => ro.disconnect();
   }, [draft, font, lineSpacing, accent, variant]);
 
-  const screenWidth = deviceWidth - BEZEL * 2;
+  // Calculate scaling with dynamic container width
+  const effectiveDeviceWidth = Math.min(containerWidth, deviceWidth);
+  const screenWidth = effectiveDeviceWidth - BEZEL * 2;
   const scale = screenWidth / A4_WIDTH;
-  
-  // Optimized: Use a slightly more flexible height calculation to avoid excessive vertical scrolling
-  // on smaller viewports while maintaining the premium aspect ratio.
-  const screenHeight = Math.round(screenWidth * 2.1); 
+  const screenHeight = Math.round(screenWidth * 1.414); // Precise A4 aspect ratio
   const trackHeight = Math.round(naturalHeight * scale);
 
   return (
-    <div className={"mx-auto select-none " + (className ?? "")} style={{ width: deviceWidth }}>
+    <div
+      ref={containerRef}
+      className={"mx-auto select-none transition-all duration-200 " + (className ?? "")}
+      style={{ width: "100%", maxWidth: deviceWidth }}
+    >
       <div
         className="relative rounded-[42px]"
         style={{
           padding: BEZEL,
           background: "linear-gradient(150deg, #3b3f4a 0%, #15171d 38%, #0b0c11 70%, #2a2d36 100%)",
           boxShadow:
-            "0 2px 1px rgba(255,255,255,0.18) inset, 0 -2px 2px rgba(0,0,0,0.6) inset, 0 30px 60px -20px rgba(0,0,0,0.75), 0 12px 24px -12px rgba(34,211,238,0.25)",
+            "0 2px 1px rgba(255,255,255,0.18) inset, 0 -2px 2px rgba(0,0,0,0.6) inset, 0 40px 80px -20px rgba(0,0,0,0.85), 0 16px 32px -12px rgba(34,211,238,0.3), inset 0 1px 0 rgba(255,255,255,0.1)",
         }}
       >
         {/* Side buttons (volume + power) — pure CSS accents. */}
@@ -73,8 +96,12 @@ export function PhonePreview({
 
         {/* Screen */}
         <div
-          className="relative overflow-hidden rounded-[32px] bg-white"
-          style={{ width: screenWidth, height: screenHeight }}
+          className="relative overflow-hidden rounded-[32px] bg-white transition-all duration-200"
+          style={{
+            width: screenWidth,
+            height: screenHeight,
+            willChange: "width, height",
+          }}
         >
           {/* Speaker notch / dynamic-island pill. */}
           <div className="pointer-events-none absolute left-1/2 top-2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/90 px-3 py-1.5 shadow">
@@ -82,18 +109,31 @@ export function PhonePreview({
             <span className="h-1 w-8 rounded-full bg-ink-800" />
           </div>
 
-          {/* Scrollable document viewport. */}
+          {/* Scrollable document viewport with optimized rendering. */}
           <div
             className="h-full w-full overflow-y-auto overflow-x-hidden scrollbar-hide"
-            style={{ WebkitOverflowScrolling: "touch" }}
+            style={{
+              WebkitOverflowScrolling: "touch",
+              willChange: "scroll-position",
+            }}
           >
-            <div style={{ height: trackHeight, width: screenWidth, position: "relative" }}>
+            <div
+              style={{
+                height: trackHeight,
+                width: screenWidth,
+                position: "relative",
+                willChange: "height",
+              }}
+            >
               <div
                 ref={innerRef}
                 style={{
                   width: A4_WIDTH,
                   transform: `scale(${scale})`,
                   transformOrigin: "top left",
+                  willChange: "transform",
+                  backfaceVisibility: "hidden",
+                  perspective: 1000,
                 }}
               >
                 <CvDocument
@@ -110,7 +150,7 @@ export function PhonePreview({
       </div>
 
       {/* Home-bar hint under the chassis for that finished, lively feel. */}
-      <div className="mx-auto mt-3 h-1 w-24 rounded-full bg-ink-700/70" />
+      <div className="mx-auto mt-3 h-1 w-24 rounded-full bg-ink-700/70 transition-all duration-200" />
     </div>
   );
 }

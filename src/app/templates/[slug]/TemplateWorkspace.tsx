@@ -175,6 +175,7 @@ export function TemplateWorkspace({ template, unlocked, streak, initialHistory }
   }, [refreshDraft]);
 
   // ---- Placeholder projection so the preview is never visually empty -------
+  // Memoized to prevent unnecessary re-renders and ensure zero-lag updates
   const previewDraft = useMemo<MakaraCvDraft>(() => {
     if (liveDraft.fullName.trim()) return liveDraft;
     return {
@@ -184,8 +185,15 @@ export function TemplateWorkspace({ template, unlocked, streak, initialHistory }
     };
   }, [liveDraft]);
 
+  // Memoize font class for stable rendering
+  const memoizedFont = useMemo(() => font, [font]);
+  const memoizedLineSpacing = useMemo(() => lineSpacing, [lineSpacing]);
+  const memoizedAccent = useMemo(() => accent, [accent]);
+  const memoizedLayout = useMemo(() => layout, [layout]);
+
   const handleInterviewComplete = useCallback(
     (draft: MakaraCvDraft, industry: IndustryId, draftId: string | null) => {
+      // Batch state updates to prevent layout thrashing
       setSavedDraft(draft);
       setSavedIndustry(industry);
       setLiveDraft(draft);
@@ -195,6 +203,23 @@ export function TemplateWorkspace({ template, unlocked, streak, initialHistory }
     },
     [refreshDraft],
   );
+
+  // Memoize layout change handlers to prevent re-renders
+  const handleLayoutChange = useCallback((newLayout: CvLayoutId) => {
+    setLayout(newLayout);
+  }, []);
+
+  const handleFontChange = useCallback((newFont: KhmerFontKey) => {
+    setFont(newFont);
+  }, []);
+
+  const handleLineSpacingChange = useCallback((newSpacing: number) => {
+    setLineSpacing(newSpacing);
+  }, []);
+
+  const handleAccentChange = useCallback((newAccent: string) => {
+    setAccent(newAccent);
+  }, []);
 
   const handleRewrite = useCallback(() => {
     setPhase("editing");
@@ -261,8 +286,8 @@ export function TemplateWorkspace({ template, unlocked, streak, initialHistory }
     <main className="relative min-h-screen text-ink-100">
       <CVCanvas accent={accent} className="fixed inset-0 -z-10" />
 
-      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-        <section className="relative flex min-h-screen flex-col border-ink-800/60 lg:border-r">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2 bg-gradient-to-b from-ink-950 via-ink-900 to-ink-950">
+        <section className="relative flex min-h-screen flex-col border-ink-800/60 lg:border-r bg-ink-950/40">
           <header className="border-b border-ink-800/60 px-6 py-5">
             <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-accent-cyan">
               NURF MY CV · {template.category}
@@ -345,9 +370,9 @@ export function TemplateWorkspace({ template, unlocked, streak, initialHistory }
           </footer>
         </section>
 
-        <section className="relative hidden lg:block">
+        <section className="relative hidden lg:flex lg:flex-col bg-gradient-to-br from-slate-950 via-ink-950 to-slate-950">
           <div className="sticky top-0 flex h-screen flex-col">
-            <div className="flex items-center justify-between border-b border-ink-800/60 px-6 py-4">
+            <div className="flex items-center justify-between border-b border-white/5 bg-ink-900/60 backdrop-blur-sm px-6 py-4">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-accent-cyan">
                   មើលគំរូផ្ទាល់ · Live Preview
@@ -358,30 +383,36 @@ export function TemplateWorkspace({ template, unlocked, streak, initialHistory }
               </div>
             </div>
 
-            <div className="border-b border-ink-800/60 px-4 py-3">
+            <div className="border-b border-white/5 bg-ink-900/40 backdrop-blur-sm px-4 py-3">
               <div className="space-y-3">
-                <LayoutPicker value={layout} onChange={setLayout} />
+                <LayoutPicker value={layout} onChange={handleLayoutChange} />
                 <CustomizationPanel
                   compact
                   font={font}
-                  onFontChange={setFont}
+                  onFontChange={handleFontChange}
                   lineSpacing={lineSpacing}
-                  onLineSpacingChange={setLineSpacing}
+                  onLineSpacingChange={handleLineSpacingChange}
                   accent={accent}
-                  onAccentChange={setAccent}
+                  onAccentChange={handleAccentChange}
                 />
               </div>
             </div>
 
-            <div className="flex-1 overflow-auto p-6">
-              <PhonePreview
-                draft={previewDraft}
-                font={font}
-                lineSpacing={lineSpacing}
-                accent={accent}
-                variant={layout}
-                deviceWidth={356}
-              />
+            <div className="flex-1 overflow-auto p-8 flex items-center justify-center bg-gradient-to-b from-slate-950/80 via-ink-950/60 to-slate-950/80">
+              <div className="relative w-full max-w-md">
+                {/* High-contrast dark studio background with premium depth shadow */}
+                <div className="absolute -inset-12 rounded-3xl bg-gradient-to-br from-black/40 via-transparent to-black/60 blur-2xl" />
+                <div className="relative" style={{ willChange: "transform" }}>
+                  <PhonePreview
+                    draft={previewDraft}
+                    font={memoizedFont}
+                    lineSpacing={memoizedLineSpacing}
+                    accent={memoizedAccent}
+                    variant={memoizedLayout}
+                    deviceWidth={356}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
