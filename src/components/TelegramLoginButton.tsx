@@ -24,7 +24,8 @@ type Props = {
   size?: "large" | "medium" | "small";
 };
 
-export default function TelegramLoginButton({ botUsername, size = "large" }: Props) {
+// បើកទាំង Named Export ជូនទំព័រ Login ចាប់យកបាន ១០០%
+export function TelegramLoginButton({ botUsername, size = "large" }: Props) {
   const router = useRouter();
   const search = useSearchParams();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -47,12 +48,9 @@ export default function TelegramLoginButton({ botUsername, size = "large" }: Pro
           credentials: "include",
         });
 
-        if (!res.ok) {
-          throw new Error(`Auth failed [${res.status}]`);
-        }
+        if (!res.ok) throw new Error(`Auth failed [${res.status}]`);
 
         const next = search.get("next") ?? "/workspace";
-        // Single, guarded navigation — no reloads, no recursion.
         router.replace(next);
       } catch (e) {
         console.error(e);
@@ -85,9 +83,7 @@ export default function TelegramLoginButton({ botUsername, size = "large" }: Pro
     };
   }, [botUsername, size, handleAuth]);
 
-  if (isRedirecting) {
-    return <AuthLoadingOverlay />;
-  }
+  if (isRedirecting) return <AuthLoadingOverlay />;
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -103,23 +99,19 @@ export default function TelegramLoginButton({ botUsername, size = "large" }: Pro
 
 function AuthLoadingOverlay() {
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-white/95 backdrop-blur-sm"
-    >
+    <div role="status" aria-live="polite" className="fixed inset-0 z-50 flex items-center justify-center bg-white/95 backdrop-blur-sm">
       <div className="flex flex-col items-center gap-5 rounded-xl border border-gray-200 bg-white px-8 py-7">
         <div className="relative h-10 w-10">
           <span className="absolute inset-0 rounded-full border-2 border-gray-100" />
           <span className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-blue-600" />
         </div>
         <div className="flex flex-col items-center gap-1">
-          <p className="text-base font-semibold tracking-tight text-gray-900">
-            កំពុងផ្ទៀងផ្ទាត់ប្រព័ន្ធ...
-          </p>
+          <p className="text-base font-semibold tracking-tight text-gray-900">កំពុងផ្ទៀងផ្ទាត់ប្រព័ន្ធ...</p>
           <p className="text-xs font-medium text-gray-500">Authenticating...</p>
         </div>
       </div>
     </div>
   );
 }
+
+export default TelegramLoginButton;
