@@ -30,7 +30,9 @@ interface PollErrorResponse {
 type PollResponse = PollPendingResponse | PollOkResponse | PollErrorResponse;
 
 const POLL_INTERVAL_MS = 1500;
+const GLOBAL_SESSION_WATCH_INTERVAL_MS = 1000;
 const POLL_MAX_DURATION_MS = 10 * 60 * 1000; // matches LOGIN_TOKEN_TTL_MS server-side
+const DASHBOARD_PATH = "/dashboard";
 
 /**
  * Bot deep-link login button. Clicking it:
@@ -55,25 +57,80 @@ export function TelegramLoginButton({ buttonLabel = "ចូលប្រើជា
     };
   }, []);
 
+  // Bulletproof root watcher: this loop is intentionally decoupled from the
+  // button's local phase/token state. If production Firefox/Safari accepts the
+  // session cookie but a local polling loop misses the handoff, this credentialed
+  // session check force-escapes the login page immediately.
+  useEffect(() => {
+    let stopped = false;
+    let inFlight = false;
+
+    const checkSessionAndRedirect = async () => {
+      if (stopped || inFlight) return;
+      inFlight = true;
+
+      try {
+        const res = await fetch("/api/auth/poll?check=true", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
+
+        if (!res.ok) return;
+
+        const body = (await res.json()) as PollResponse;
+        if (!stopped && "status" in body && body.status === "ok") {
+          window.location.href = DASHBOARD_PATH;
+        }
+      } catch {
+        // Never let Firefox/Safari transient network, cookie-partition, or JSON
+        // timing issues kill the global watcher. The next tick will retry.
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    void checkSessionAndRedirect();
+    const intervalId = window.setInterval(
+      () => void checkSessionAndRedirect(),
+      GLOBAL_SESSION_WATCH_INTERVAL_MS,
+    );
+
+    return () => {
+      stopped = true;
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
   const startLogin = useCallback(async () => {
     setErrorMessage(null);
     setPhase("starting");
 
     let init: InitResponse;
     try {
-      // Before starting, check if we already have a session (race condition / auto-login)
-      const check = await fetch("/api/auth/poll?check=true", { cache: "no-store" });
+      // Before starting, check if we already have a session (race condition / auto-login).
+      const check = await fetch("/api/auth/poll?check=true", {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (check.ok) {
-        const body = await check.json();
-        if (body.status === "ok") {
-          window.location.replace("/dashboard");
+        const body = (await check.json()) as PollResponse;
+        if ("status" in body && body.status === "ok") {
+          window.location.href = DASHBOARD_PATH;
           return;
         }
       }
 
       const res = await fetch("/api/auth/init", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        credentials: "include",
+        headers: {
+          "content-type": "application/json",
+          "Cache-Control": "no-cache",
+        },
         cache: "no-store",
       });
       if (!res.ok) {
@@ -105,58 +162,61 @@ export function TelegramLoginButton({ buttonLabel = "ចូលប្រើជា
     const deadline = Date.now() + POLL_MAX_DURATION_MS;
 
     while (!controller.signal.aborted) {
-      await sleep(POLL_INTERVAL_MS, controller.signal);
-      if (controller.signal.aborted) return;
-      if (Date.now() > deadline) {
-        setPhase("error");
-        setErrorMessage("Login link expired. Try again.");
-        return;
-      }
-
-      let body: PollResponse;
       try {
-        const res = await fetch(
-          `/api/auth/poll?token=${encodeURIComponent(init.token)}`,
-          { signal: controller.signal, cache: "no-store" },
-        );
-        body = (await res.json()) as PollResponse;
-      } catch {
+        await sleep(POLL_INTERVAL_MS, controller.signal);
         if (controller.signal.aborted) return;
-        // Transient network error — keep polling.
-        continue;
-      }
-
-      if ("error" in body) {
-        const code = body.error.code;
-        if (code === "TOKEN_EXPIRED" || code === "TOKEN_INVALID") {
+        if (Date.now() > deadline) {
           setPhase("error");
           setErrorMessage("Login link expired. Try again.");
           return;
         }
-        // Race condition: another tab already consumed the token but we now have
-        // a valid session cookie. Treat as success and redirect.
-        if (code === "TOKEN_ALREADY_USED") {
-          setPhase("success");
-          const next =
-            new URLSearchParams(window.location.search).get("next") ?? "/dashboard";
-          window.location.assign(next);
+
+        const res = await fetch(`/api/auth/poll?token=${encodeURIComponent(init.token)}`, {
+          method: "GET",
+          credentials: "include",
+          signal: controller.signal,
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
+        const body = (await res.json()) as PollResponse;
+
+        if ("error" in body) {
+          const code = body.error.code;
+          if (code === "TOKEN_EXPIRED" || code === "TOKEN_INVALID") {
+            setPhase("error");
+            setErrorMessage("Login link expired. Try again.");
+            return;
+          }
+          // Race condition: another tab already consumed the token but we now have
+          // a valid session cookie. Treat as success and redirect.
+          if (code === "TOKEN_ALREADY_USED") {
+            setPhase("success");
+            window.location.href = DASHBOARD_PATH;
+            return;
+          }
+          // Unknown error: surface and stop.
+          setPhase("error");
+          setErrorMessage(body.error.message || code);
           return;
         }
-        // Unknown error: surface and stop.
-        setPhase("error");
-        setErrorMessage(body.error.message || code);
-        return;
-      }
 
-      if (body.status === "pending") continue;
+        if (body.status === "pending") continue;
 
-      if (body.status === "ok") {
-        setPhase("success");
-        // BRUTE-FORCE: Immediate hard browser sweep
-        window.location.href = "/dashboard";
-        // Fallback for safety
-        setTimeout(() => { window.location.replace("/dashboard"); }, 500);
-        return;
+        if (body.status === "ok") {
+          setPhase("success");
+          // Absolute browser-level redirect: bypass local React/router state.
+          window.location.href = DASHBOARD_PATH;
+          // Fallback for safety if a browser extension or old engine stalls href assignment.
+          window.setTimeout(() => {
+            window.location.replace(DASHBOARD_PATH);
+          }, 500);
+          return;
+        }
+      } catch {
+        if (controller.signal.aborted) return;
+        // Universal guard: transient network errors, credential handoff delays, or
+        // malformed/interrupted JSON responses must not kill the polling loop.
+        continue;
       }
     }
   }, []);
@@ -225,7 +285,7 @@ export function TelegramLoginButton({ buttonLabel = "ចូលប្រើជា
 
       {phase === "success" ? (
         <a
-          href="/dashboard"
+          href={DASHBOARD_PATH}
           className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-6 py-4 text-sm font-bold text-white shadow-[0_10px_20px_-5px_rgba(16,185,129,0.4)] transition-all hover:scale-[1.02] hover:bg-emerald-400"
         >
           ✓ បានជោគជ័យ! ចុចត្រង់នេះដើម្បីចូលទៅ Dashboard
@@ -262,9 +322,9 @@ function TelegramLogoSvg() {
 
 async function sleep(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise<void>((resolve) => {
-    const t = setTimeout(resolve, ms);
+    const t = window.setTimeout(resolve, ms);
     signal.addEventListener("abort", () => {
-      clearTimeout(t);
+      window.clearTimeout(t);
       resolve();
     });
   });
