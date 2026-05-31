@@ -1,8 +1,10 @@
 import { TelegramLoginButton } from "@/components/TelegramLoginButton";
+import { resolveSessionFromCookieStore } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const session = await resolveSessionFromCookieStore();
   const botConfigured = Boolean(
     process.env.TELEGRAM_BOT_USERNAME && process.env.TELEGRAM_BOT_TOKEN,
   );
@@ -28,17 +30,19 @@ export default function LoginPage() {
           )}
         </div>
 
-        <div className="mt-10 border-t border-white/10 pt-6">
-          <form action="/api/auth/logout" method="post">
-            <button 
-              type="submit"
-              className="group flex items-center justify-center gap-2 mx-auto text-xs font-medium uppercase tracking-widest text-ink-300 transition hover:text-white"
-            >
-              <span className="transition-transform group-hover:-translate-x-1">←</span>
-              ចាកចេញពីគណនី / Reset Session
-            </button>
-          </form>
-        </div>
+        {session && (
+          <div className="mt-10 border-t border-white/10 pt-6">
+            <form action="/api/auth/logout" method="post">
+              <button 
+                type="submit"
+                className="group flex items-center justify-center gap-2 mx-auto text-xs font-medium uppercase tracking-widest text-ink-300 transition hover:text-white"
+              >
+                <span className="transition-transform group-hover:-translate-x-1">←</span>
+                ចាកចេញពីគណនី / Reset Session
+              </button>
+            </form>
+          </div>
+        )}
       </div>
 
       <footer className="mt-12 flex flex-col items-center gap-3">
