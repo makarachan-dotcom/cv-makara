@@ -19,7 +19,7 @@ export default async function LoginPage() {
         
         <div className="mt-8 w-full">
           {botConfigured ? (
-            <TelegramLoginButton />
+            <TelegramLoginButton botUsername={process.env.TELEGRAM_BOT_USERNAME!} />
           ) : (
             <div className="rounded-xl border border-accent-rose/50 bg-accent-rose/10 p-4 text-left text-sm text-accent-rose">
               <p className="font-mono text-xs uppercase tracking-widest">Configuration error</p>
