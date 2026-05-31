@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CVCanvas } from "@/components/canvas/CVCanvas";
 import { CustomizationPanel } from "@/components/canvas/CustomizationPanel";
 import { LayoutPicker } from "@/components/cv/LayoutPicker";
@@ -12,7 +12,7 @@ import {
   type MakaraCvDraft,
 } from "@/lib/cv-draft";
 import { DEFAULT_CV_LAYOUT, type CvLayoutId } from "@/templates/registry";
-import type { IndustryId } from "@/lib/interview/engine";
+import { getIndustry, type IndustryId } from "@/lib/interview/engine";
 import type { TemplateMeta } from "@/templates/registry";
 import { DEMO_FAST_FILL_DRAFT } from "@/lib/demo-data";
 
@@ -44,7 +44,14 @@ interface ActiveDraftSummary {
   headline: string;
 }
 
+interface ActiveDraftPayload {
+  id: string;
+  industry: string | null;
+  data: MakaraCvDraft;
+}
+
 type FormPhase = "editing" | "saved";
+const FALLBACK_DRAFT_ID = "active";
 
 /**
  * Helper to safely parse JSON from a fetch response.
@@ -77,6 +84,8 @@ export function TemplateWorkspace({ template, initialHistory }: Props) {
   const [interviewerKey, setInterviewerKey] = useState(0);
   const [savedDraft, setSavedDraft] = useState<MakaraCvDraft | null>(initialHistory?.payload || null);
   const [savedIndustry, setSavedIndustry] = useState<IndustryId | null>(initialHistory?.industry || null);
+  const [isHydratingDraft, setIsHydratingDraft] = useState(false);
+  const isHydratingDraftRef = useRef(false);
 
   // ---- Mobile preview popup modal (slide-up overlay) -----------------------
   const [mobileMounted, setMobileMounted] = useState(false);
@@ -117,6 +126,18 @@ export function TemplateWorkspace({ template, initialHistory }: Props) {
       }
     } catch {
       setDraftState(null);
+    }
+  }, []);
+
+  const hydrateFromActiveDraft = useCallback(async (): Promise<ActiveDraftPayload | null> => {
+    try {
+      const res = await fetch("/api/drafts", { headers: { "cache-control": "no-store" } });
+      if (!res.ok) return null;
+      const json = await safeParseJson<{ draft: ActiveDraftPayload | null }>(res);
+      return json?.draft ?? null;
+    } catch (err) {
+      console.error("[HYDRATE_ACTIVE_DRAFT_ERROR]", err);
+      return null;
     }
   }, []);
 
@@ -217,6 +238,40 @@ export function TemplateWorkspace({ template, initialHistory }: Props) {
     setInterviewerKey((k) => k + 1);
   }, []);
 
+  const handleUseDraftData = useCallback(async () => {
+    if (isHydratingDraftRef.current) return;
+    isHydratingDraftRef.current = true;
+    setIsHydratingDraft(true);
+    try {
+      const activeDraft = await hydrateFromActiveDraft();
+      const sourceDraft = activeDraft?.data ?? savedDraft;
+      if (sourceDraft) {
+        const nextIndustry = activeDraft?.industry;
+        const validatedIndustry = nextIndustry ? getIndustry(nextIndustry)?.id : null;
+        if (nextIndustry && !validatedIndustry) {
+          console.warn("[HYDRATE_ACTIVE_DRAFT_INVALID_INDUSTRY]", nextIndustry);
+        }
+        const normalizedIndustry = validatedIndustry ?? savedIndustry;
+
+        if (normalizedIndustry) setSavedIndustry(normalizedIndustry);
+        setSavedDraft(sourceDraft);
+        setLiveDraft(sourceDraft);
+        setDraftState({
+          id: activeDraft?.id ?? draftState?.id ?? FALLBACK_DRAFT_ID,
+          fullName: sourceDraft.fullName,
+          headline: sourceDraft.headline,
+        });
+        setPhase("editing");
+        setInterviewerKey((k) => k + 1);
+      } else {
+        console.warn("[HYDRATE_ACTIVE_DRAFT_MISSING_DATA]");
+      }
+    } finally {
+      isHydratingDraftRef.current = false;
+      setIsHydratingDraft(false);
+    }
+  }, [draftState?.id, hydrateFromActiveDraft, savedDraft, savedIndustry]);
+
   return (
     <main className="relative min-h-screen text-ink-100">
       <CVCanvas accent={accent} className="fixed inset-0 -z-10" />
@@ -257,6 +312,14 @@ export function TemplateWorkspace({ template, initialHistory }: Props) {
                   </p>
                 </div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={handleUseDraftData}
+                    disabled={isHydratingDraft}
+                    className="sm:col-span-2 rounded-lg border border-accent-cyan/60 bg-accent-cyan/20 px-4 py-2.5 text-sm font-semibold text-accent-cyan hover:bg-accent-cyan/30 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    ប្រើប្រាស់ទិន្នន័យព្រាងនេះ • Use Draft Data
+                  </button>
                   <button
                     type="button"
                     onClick={handleRewrite}
