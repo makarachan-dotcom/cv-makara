@@ -26,16 +26,10 @@ export default function HomePage() {
             បើកស្ទូឌីយោ CV · Open Studio
           </Link>
           <Link
-            href="/login"
+            href="/templates/standard"
             className="rounded-full border border-white/10 bg-white/5 px-8 py-3.5 text-sm font-semibold text-ink-100 backdrop-blur-md transition-all hover:bg-white/10 hover:border-white/20"
           >
-            ចូលប្រើជាមួយ Telegram
-          </Link>
-          <Link
-            href="/dashboard"
-            className="rounded-full border border-white/10 bg-white/5 px-8 py-3.5 text-sm font-semibold text-ink-100 backdrop-blur-md transition-all hover:bg-white/10 hover:border-white/20"
-          >
-            ផ្ទាំងគ្រប់គ្រង
+            បង្កើត CV ថ្មី · Create New CV
           </Link>
         </div>
       </header>

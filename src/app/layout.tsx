@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Kantumruy_Pro, Hanuman, Nokora, Siemreap } from "next/font/google";
+import Header from "@/components/Header";
 import "./globals.css";
 
 // =============================================================================
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Pure-CSS animated mesh-gradient backdrop (no WebGL). Fixed, behind
             all content, hidden in print. Provides the "living" premium feel. */}
         <div className="mesh-backdrop" aria-hidden />
+        <Header />
         {children}
       </body>
     </html>

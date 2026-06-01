@@ -50,7 +50,8 @@ export function TelegramLoginButton({ botUsername, size = "large" }: Props) {
 
         if (!res.ok) throw new Error(`Auth failed [${res.status}]`);
 
-        const next = search.get("next") ?? "/workspace";
+        // Redirect to dashboard after successful login (or custom next path)
+        const next = search.get("next") ?? "/dashboard";
         router.replace(next);
       } catch (e) {
         console.error(e);

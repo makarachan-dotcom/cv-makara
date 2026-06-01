@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   clearSessionCookie,
   destroySession,
@@ -8,11 +8,15 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const session = await resolveSessionFromCookieStore();
   if (session) {
     await destroySession(session.sessionId);
   }
   clearSessionCookie();
-  return NextResponse.redirect(new URL("/login", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"));
+
+  // Build redirect URL using the request origin (works for any domain)
+  const requestUrl = new URL(req.url);
+  const loginUrl = new URL("/login", requestUrl.origin);
+  return NextResponse.redirect(loginUrl);
 }

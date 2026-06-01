@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_PATHS = new Set<string>(["/", "/login", "/auth/telegram", "/api/auth/telegram"]);
-const PROTECTED_PREFIXES = ["/workspace", "/dashboard", "/cv", "/account"];
+const PROTECTED_PREFIXES = ["/dashboard", "/history", "/studio", "/templates", "/cv", "/account"];
 
 function isPublic(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
@@ -23,10 +23,10 @@ export function middleware(req: NextRequest): NextResponse {
 
   // Never redirect static or already-public assets — kills the bounce loop.
   if (isPublic(pathname)) {
-    // Authed user visiting /login → send them home ONCE (no recursion).
+    // Authed user visiting /login → send them to dashboard ONCE (no recursion).
     if (isAuthed && (pathname === "/login" || pathname === "/")) {
       const url = req.nextUrl.clone();
-      url.pathname = "/workspace";
+      url.pathname = "/dashboard";
       url.search = "";
       return NextResponse.redirect(url);
     }
