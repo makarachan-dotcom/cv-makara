@@ -6,6 +6,7 @@ import { CvDocument } from "@/components/cv/CvDocument";
 import { ExportSelector } from "@/components/export/ExportSelector";
 import { LayoutPicker } from "@/components/cv/LayoutPicker";
 import { KhmerInterviewer } from "@/components/interview/KhmerInterviewer";
+import { PreviewModal } from "@/components/PreviewModal";
 import { DEFAULT_CV_LAYOUT, type CvLayoutId } from "@/templates/registry";
 import {
   EMPTY_DRAFT,
@@ -113,6 +114,17 @@ export default function StudioPage() {
                 </label>
               </section>
 
+              {/* Preview button on mobile, hidden on desktop */}
+              <div className="lg:hidden">
+                <PreviewModal
+                  draft={draft}
+                  font={font}
+                  lineSpacing={lineSpacing}
+                  accent={accent}
+                  layout={layout}
+                />
+              </div>
+
               <ExportSelector
                 draft={draft}
                 nodeRef={cvRef}
@@ -130,8 +142,8 @@ export default function StudioPage() {
           )}
         </aside>
 
-        {/* ----------------------------- A4 preview ----------------------------- */}
-        <section className="flex justify-center">
+        {/* ----------------------------- A4 preview (desktop only) ----------------------------- */}
+        <section className="hidden lg:flex justify-center">
           <div className="w-full overflow-auto rounded-2xl border border-ink-700 bg-ink-800/40 p-6">
             <div
               className="mx-auto origin-top"

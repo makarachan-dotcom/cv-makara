@@ -52,15 +52,14 @@ export default function HomePage() {
 
       <section className="mt-12 tilt-3d glass-card rounded-3xl border border-white/15 bg-neutral-900/80 p-8 backdrop-blur-xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] transition-all duration-300 hover:-translate-y-1.5">
         <h2 className="text-sm font-bold uppercase tracking-widest text-accent-cyan">
-          តើអ្នកត្រូវការទាក់ទងអ្នកគ្រប់គ្រង (Admin) ឬ?
+          តើអ្នកត្រូវការលក្ខ័ណ្ឌពិសេស ឬសហការផ្សេងទៀត?
         </h2>
         <p className="mt-3 max-w-xl text-sm leading-khmer text-ink-200">
-          គណនី Telegram របស់អ្នកគ្រប់គ្រងត្រូវបានការពារដោយការសម្ងាត់។ ប្រព័ន្ធនឹងបង្ហាញតំណភ្ជាប់ លុះត្រាតែអ្នកចុចសង្កត់ឱ្យជាប់រយៈពេល ៣ វិនាទី 
-          ដើម្បីបញ្ជាក់ថាអ្នកមិនមែនជាកម្មវិធីស្វ័យប្រវត្ត (Bot)។
+          Admin របស់យើងអាចផ្តល់ជូនលក្ខ័ណ្ឌពិសេស ដូចជា តម្លាភាពលម្អិត ឬការបង្កើត CV ជាច្រើនក្នុងពេលតែមួយ។ សូមទាក់ទងរយៈពេល ៣ វិនាទី ដើម្បីបង្ហាញថាអ្នកមិនមែនជាកម្មវិធីស្វ័យប្រវត្ត។
         </p>
         <div className="mt-6">
-          <HoldToReveal 
-            label="សង្កត់ដើម្បីទាក់ទង Admin (3s)" 
+          <HoldToReveal
+            label="សង្កត់ដើម្បីទាក់ទង Admin (3s)"
             className="group relative inline-flex select-none items-center gap-4 rounded-2xl border border-white/10 bg-black/40 px-8 py-4 text-sm text-ink-100 transition hover:bg-black/60 hover:border-accent-cyan/40"
           />
         </div>
