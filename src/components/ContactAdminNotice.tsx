@@ -5,7 +5,7 @@ export type ContactAdminNoticeProps = {
   cta?: ReactNode;
 };
 
-export default function ContactAdminNotice({ className, cta }: ContactAdminNoticeProps) {
+export function ContactAdminNotice({ className, cta }: ContactAdminNoticeProps) {
   const baseClasses = "mt-4 rounded-xl border border-cyan-950/40 bg-cyan-950/10 px-4 py-3 text-xs text-slate-400 max-w-xl";
   const merged = className ? `${baseClasses} ${className}` : baseClasses;
 
@@ -24,3 +24,5 @@ export default function ContactAdminNotice({ className, cta }: ContactAdminNotic
     </div>
   );
 }
+
+export default ContactAdminNotice;
