@@ -13,7 +13,6 @@ type Props = {
   layout: CvLayoutId;
 };
 
-// Sample Khmer draft for preview
 const PREVIEW_DRAFT: MakaraCvDraft = {
   ...EMPTY_DRAFT,
   fullName: "សុខ សុភា",
@@ -42,7 +41,7 @@ const PREVIEW_DRAFT: MakaraCvDraft = {
     {
       institution: "សាកលវិទ្យាល័យភូមិន្ទភ្នំពេញ",
       credential: "បរិញ្ញាបត្រ វិទ្យាសាស្ត្រកុំព្យូទ័រ",
-      period: "២០១៥ - ២០១៩",
+      period: "២០১৫ - ២០១៩",
     },
   ],
   skills: ["TypeScript", "React", "Node.js", "PostgreSQL", "គ្រប់គ្រងគម្រោង", "ភាសាអង់គ្លេស"],
@@ -62,7 +61,6 @@ export function PreviewModal({ draft, font, lineSpacing, accent, layout }: Props
     }
   }, []);
 
-  // ចាក់សោការ Scroll ទំព័រ Background នៅពេល Mobile Modal បើកដំណើរការ
   useEffect(() => {
     if (!isOpen) return;
     const previousOverflow = document.body.style.overflow;
@@ -77,7 +75,6 @@ export function PreviewModal({ draft, font, lineSpacing, accent, layout }: Props
 
   return (
     <>
-      {/* 1. ប៊ូតុងអណ្តែត Mobile Floating Action Button - បង្ហាញតែលើ Mobile ប៉ុណ្ណោះ លាក់ខ្លួនលើ Desktop (md:hidden) */}
       <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-teal-400 px-5 py-3 text-sm font-bold text-slate-950 shadow-xl shadow-cyan-500/30 transition-all hover:scale-105 active:scale-95 md:hidden"
@@ -86,7 +83,6 @@ export function PreviewModal({ draft, font, lineSpacing, accent, layout }: Props
         👁️ មើលគំរូ CV / View My CV
       </button>
 
-      {/* 2. ផ្ទាំង Pop-up Modal ពេញអេក្រង់សម្រាប់ Mobile */}
       {isOpen && (
         <div
           role="dialog"
@@ -95,7 +91,6 @@ export function PreviewModal({ draft, font, lineSpacing, accent, layout }: Props
           className="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-md p-4 overflow-y-auto touch-pan-y overscroll-contain"
           onClick={() => setIsOpen(false)}
         >
-          {/* Sticky Header ខាងលើជាមួយប៊ូតុងបិទ */}
           <div
             className="w-full max-w-xl mx-auto flex items-center justify-between border-b border-slate-800 pb-3 mb-4 sticky top-0 bg-slate-950/90 py-2 z-10"
             onClick={(e) => e.stopPropagation()}
@@ -115,7 +110,6 @@ export function PreviewModal({ draft, font, lineSpacing, accent, layout }: Props
             </button>
           </div>
 
-          {/* ផ្ទាំងបង្ហាញសន្លឹកក្រដាស CV A4 ករណីរមៀលមើលចុះក្រោម */}
           <div
             className="w-full flex-1 flex justify-center items-start pb-10"
             onClick={(e) => e.stopPropagation()}
@@ -138,4 +132,5 @@ export function PreviewModal({ draft, font, lineSpacing, accent, layout }: Props
   );
 }
 
-export { PreviewModal };
+// យុទ្ធសាស្ត្រមហាសុវត្ថិភាព៖ បើកផ្លូវឱ្យទំព័រធំ Import យកទៅប្រើបានគ្រប់ក្បាច់ មិនលោត Error
+export default PreviewModal;
