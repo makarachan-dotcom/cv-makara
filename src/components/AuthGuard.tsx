@@ -14,8 +14,8 @@ type Props = {
 };
 
 // Defensive timeout to prevent infinite loading deadlocks on production deployments
-// where DNS/DB handshakes may stall. 4 seconds is generous for a local session check.
-const SESSION_TIMEOUT_MS = 4000;
+// where DNS/DB handshakes may stall. 2 seconds is enough for a local session check.
+const SESSION_TIMEOUT_MS = 2000;
 
 export default function AuthGuard({ children, requireAuth = true }: Props) {
   const router = useRouter();
@@ -24,43 +24,46 @@ export default function AuthGuard({ children, requireAuth = true }: Props) {
   const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
 
   useEffect(() => {
-    const ac = new AbortController();
+    let cancelled = false;
     let timeoutId: NodeJS.Timeout | null = null;
 
-    const clearSession = () => {
-      ac.abort();
+    const finish = (state: SessionState) => {
+      if (cancelled) return;
       if (timeoutId) clearTimeout(timeoutId);
-      setSession({ status: "anon" });
+      setSession(state);
     };
 
     // Defensive timeout: if the endpoint doesn't respond within the limit,
     // abort and treat as unauthenticated to unlock the UI.
     timeoutId = setTimeout(() => {
-      clearSession();
+      finish({ status: "anon" });
     }, SESSION_TIMEOUT_MS);
 
-    // Check existing session via the auth poll endpoint with check=true,
-    // which returns the current session state without requiring a login token.
-    fetch("/api/auth/poll?check=true", { credentials: "include", signal: ac.signal })
-      .then((r) => {
-        if (!r.ok) throw new Error(`Session check failed: ${r.status}`);
-        return r.json();
+    // Check existing session via the auth poll endpoint with check=true
+    fetch("/api/auth/poll?check=true", { credentials: "include" })
+      .then(async (r) => {
+        if (!r.ok) {
+          throw new Error(`Session check failed: ${r.status}`);
+        }
+        const data = await r.json();
+        return data;
       })
-      .then((data: { status: string; userId?: string; role?: string } | null) => {
-        if (timeoutId) clearTimeout(timeoutId);
+      .then((data: { status: string; userId?: string; role?: string; error?: { code: string } } | null) => {
+        // Only accept "ok" status with all required fields
         if (data && data.status === "ok" && data.userId && data.role) {
-          setSession({ status: "authed", userId: data.userId, role: data.role });
+          finish({ status: "authed", userId: data.userId, role: data.role });
         } else {
-          setSession({ status: "anon" });
+          // Any other response means no valid session
+          finish({ status: "anon" });
         }
       })
       .catch(() => {
-        if (timeoutId) clearTimeout(timeoutId);
-        setSession({ status: "anon" });
+        // Network error, timeout, parse error - treat as anon
+        finish({ status: "anon" });
       });
 
     return () => {
-      ac.abort();
+      cancelled = true;
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, []);

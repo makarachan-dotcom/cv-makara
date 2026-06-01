@@ -18,7 +18,8 @@ function isProtected(pathname: string): boolean {
 
 export function middleware(req: NextRequest): NextResponse {
   const { pathname, search } = req.nextUrl;
-  const token = req.cookies.get("makara_session")?.value ?? null;
+  // Use the correct session cookie name (makara_sid, not makara_session)
+  const token = req.cookies.get("makara_sid")?.value ?? null;
   const isAuthed = Boolean(token);
 
   // Never redirect static or already-public assets — kills the bounce loop.

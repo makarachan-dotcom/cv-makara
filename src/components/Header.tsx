@@ -8,41 +8,47 @@ type SessionState =
   | { status: "authed"; userId: string; role: string }
   | { status: "anon" };
 
+// Quick timeout - header should load fast
+const SESSION_TIMEOUT_MS = 2000;
+
 export function Header() {
   const [session, setSession] = useState<SessionState>({ status: "loading" });
 
   useEffect(() => {
-    const ac = new AbortController();
+    let cancelled = false;
     let timeoutId: NodeJS.Timeout | null = null;
 
-    const clearSession = () => {
-      ac.abort();
+    const finish = (state: SessionState) => {
+      if (cancelled) return;
       if (timeoutId) clearTimeout(timeoutId);
-      setSession({ status: "anon" });
+      setSession(state);
     };
 
-    timeoutId = setTimeout(() => clearSession(), 4000);
+    timeoutId = setTimeout(() => {
+      finish({ status: "anon" });
+    }, SESSION_TIMEOUT_MS);
 
-    fetch("/api/auth/poll?check=true", { credentials: "include", signal: ac.signal })
-      .then((r) => {
-        if (!r.ok) throw new Error(`Session check failed: ${r.status}`);
-        return r.json();
+    fetch("/api/auth/poll?check=true", { credentials: "include" })
+      .then(async (r) => {
+        if (!r.ok) {
+          throw new Error(`Session check failed: ${r.status}`);
+        }
+        const data = await r.json();
+        return data;
       })
       .then((data: { status: string; userId?: string; role?: string } | null) => {
-        if (timeoutId) clearTimeout(timeoutId);
         if (data && data.status === "ok" && data.userId && data.role) {
-          setSession({ status: "authed", userId: data.userId, role: data.role });
+          finish({ status: "authed", userId: data.userId, role: data.role });
         } else {
-          setSession({ status: "anon" });
+          finish({ status: "anon" });
         }
       })
       .catch(() => {
-        if (timeoutId) clearTimeout(timeoutId);
-        setSession({ status: "anon" });
+        finish({ status: "anon" });
       });
 
     return () => {
-      ac.abort();
+      cancelled = true;
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, []);
@@ -78,13 +84,16 @@ export function Header() {
                 </button>
               </form>
             </>
-          ) : (
+          ) : session.status === "anon" ? (
             <Link
               href="/login"
               className="rounded bg-accent-cyan px-4 py-1.5 text-xs font-semibold text-ink-950 transition hover:bg-accent-cyan/90"
             >
               ចូល · Sign in
             </Link>
+          ) : (
+            // Loading state - show nothing (just the logo)
+            <div className="h-8 w-16" />
           )}
         </nav>
       </div>
